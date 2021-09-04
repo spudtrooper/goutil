@@ -20,3 +20,42 @@ if v == 0 {
     v = b
 }
 ```
+
+## cond
+Emulate the ternary `? :`
+
+```
+v := cond.Int(b, a, z)
+```
+
+is the same as
+
+```
+v := a
+if b {
+    v = b
+}
+```
+
+## lazycond
+Emulate the ternary `? :` lazily
+
+Given
+
+```
+a := func() int { return 1 }
+z := func() int { return 1 }
+```
+
+```
+v := lazycond.Int(b, a, z)
+```
+
+is the same as
+
+```
+v := a()
+if b {
+    v = b()
+}
+```

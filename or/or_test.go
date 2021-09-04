@@ -238,7 +238,7 @@ func TestString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.a, test.b); test.want != got {
-				t.Fatalf("String(%s,%s): want %s, got %s", test.a, test.b, test.want, got)
+				t.Fatalf("String(%q,%q): want %q, got %q", test.a, test.b, test.want, got)
 			}
 		})
 	}
