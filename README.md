@@ -33,7 +33,7 @@ is the same as
 ```
 v := a
 if b {
-    v = b
+    v = z
 }
 ```
 
@@ -56,6 +56,6 @@ is the same as
 ```
 v := a()
 if b {
-    v = b()
+    v = z()
 }
 ```
