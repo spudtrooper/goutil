@@ -44,7 +44,7 @@ Given
 
 ```
 a := func() int { return 1 }
-z := func() int { return 1 }
+z := func() int { return 2 }
 ```
 
 ```
