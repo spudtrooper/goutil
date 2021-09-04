@@ -1,3 +1,4 @@
+// Package or contains functions for eagerly choosing the first non-default value from two values. The name should probably be nondefault, but I embrace being the shittiest namer known to history.
 package or
 
 // Int returns a if a != 0, otherwise b
