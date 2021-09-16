@@ -1,10 +1,21 @@
 package sets
 
+// IntSet is a set of int
 type IntSet map[int]bool
+
+// Int32Set is a set of int32
 type Int32Set map[int32]bool
+
+// Int64Set is a set of int64
 type Int64Set map[int64]bool
+
+// StringSet is a set of string
 type StringSet map[string]bool
+
+// Float32Set is a set of float32
 type Float32Set map[float32]bool
+
+// Float64Set is a set of float64
 type Float64Set map[float64]bool
 
 // Int creates a set from the list
