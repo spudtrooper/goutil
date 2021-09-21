@@ -59,3 +59,11 @@ if b {
     v = z()
 }
 ```
+
+## internal
+
+To generate `selenium/seleniumserver.go` run:
+
+```
+go run writeseleniumjar.go
+```
