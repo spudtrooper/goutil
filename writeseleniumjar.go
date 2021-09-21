@@ -1,3 +1,5 @@
+// Binary to write base64 encoded version of
+// third_party/selenium/vendor/selenium-server.jar to selenium/seleniumserver.go
 package main
 
 import (
