@@ -11,6 +11,7 @@ import (
 	"path"
 
 	"github.com/go-errors/errors"
+	"github.com/spudtrooper/goutil/io"
 	"github.com/spudtrooper/goutil/or"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
@@ -25,18 +26,12 @@ type MakeWebDriverOptions struct {
 }
 
 func findChromeDriver() string {
-	fileExists := func(f string) bool {
-		if _, err := os.Stat(f); os.IsNotExist(err) {
-			return false
-		}
-		return true
-	}
 	paths := []string{
 		"/opt/homebrew/bin/chromedriver",
 		"/usr/local/bin/chromedriver",
 	}
 	for _, f := range paths {
-		if fileExists(f) {
+		if io.FileExists(f) {
 			return f
 		}
 	}
@@ -49,7 +44,7 @@ func getSeleniumPath() (string, error) {
 		return "", err
 	}
 	res := path.Join(home, ".selenium.jar")
-	if fileExists(res) {
+	if io.FileExists(res) {
 		log.Printf("selenium jar present: %s", res)
 	} else {
 		decoded, err := base64.StdEncoding.DecodeString(seleniumServerJar)
