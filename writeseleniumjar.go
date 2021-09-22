@@ -36,14 +36,16 @@ func writeJar() error {
 	}
 	enc := base64.StdEncoding.EncodeToString(b)
 	t := `
-// DO NOT EDIT AUTOMATICALLY GENERATED: I should learn how to share data from a go module
+// DO NOT EDIT - Generated from: {{.Jar}}
 package selenium
 
 const seleniumServerJar = ` + "`" + `{{.Encoded}}` + "`"
 	data := struct {
 		Encoded string
+		Jar     string
 	}{
 		Encoded: string(enc),
+		Jar:     jar,
 	}
 	c, err := renderTemplate(t, "seleniumserver.go", data)
 	if err != nil {
