@@ -1,3 +1,4 @@
+// Package io contains functions dealing with IO.
 package io
 
 import (
