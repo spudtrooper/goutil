@@ -12,6 +12,6 @@ func TestMakeWebDriver(t *testing.T) {
 	}
 	defer cancel()
 	if wd == nil {
-		t.Fatalf("nil wd")
+		t.Errorf("nil wd")
 	}
 }

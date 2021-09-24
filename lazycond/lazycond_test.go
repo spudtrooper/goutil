@@ -29,7 +29,7 @@ func TestInt(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("Int(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("Int(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}
@@ -60,7 +60,7 @@ func TestInt32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int32(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("Int32(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("Int32(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}
@@ -90,7 +90,7 @@ func TestInt64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int64(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("Int64(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("Int64(%t, %d,%d): want %d, got %d", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}
@@ -121,7 +121,7 @@ func TestFloat32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float32(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("Float32(%t, %f,%f): want %f, got %f", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("Float32(%t, %f,%f): want %f, got %f", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}
@@ -151,7 +151,7 @@ func TestFloat64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float64(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("Float64(%t, %f,%f): want %f, got %f", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("Float64(%t, %f,%f): want %f, got %f", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}
@@ -182,7 +182,7 @@ func TestString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.b, test.a, test.z); test.want != got {
-				t.Fatalf("String(%t, %q,%q): want %q, got %q", test.b, test.a(), test.z(), test.want, got)
+				t.Errorf("String(%t, %q,%q): want %q, got %q", test.b, test.a(), test.z(), test.want, got)
 			}
 		})
 	}

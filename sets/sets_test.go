@@ -45,7 +45,7 @@ func TestInt(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("Int(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("Int(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}
@@ -91,7 +91,7 @@ func TestInt32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int32(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("Int32(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("Int32(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestInt64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int64(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("Int64(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("Int64(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}
@@ -183,7 +183,7 @@ func TestFloat32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float32(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("Float32(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("Float32(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}
@@ -229,7 +229,7 @@ func TestFloat64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float64(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("Float64(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("Float64(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}
@@ -275,7 +275,7 @@ func TestString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.input); !reflect.DeepEqual(test.want, got) {
-				t.Fatalf("String(%v): want %v, got %v", test.input, test.want, got)
+				t.Errorf("String(%v): want %v, got %v", test.input, test.want, got)
 			}
 		})
 	}

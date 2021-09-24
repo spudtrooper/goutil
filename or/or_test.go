@@ -38,7 +38,7 @@ func TestInt(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int(test.a, test.b); test.want != got {
-				t.Fatalf("Int(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
+				t.Errorf("Int(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
 			}
 		})
 	}
@@ -78,7 +78,7 @@ func TestInt32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int32(test.a, test.b); test.want != got {
-				t.Fatalf("Int32(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
+				t.Errorf("Int32(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
 			}
 		})
 	}
@@ -118,7 +118,7 @@ func TestInt64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Int64(test.a, test.b); test.want != got {
-				t.Fatalf("Int64(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
+				t.Errorf("Int64(%d,%d): want %d, got %d", test.a, test.b, test.want, got)
 			}
 		})
 	}
@@ -158,7 +158,7 @@ func TestFloat32(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float32(test.a, test.b); test.want != got {
-				t.Fatalf("Float32(%f,%f): want %f, got %f", test.a, test.b, test.want, got)
+				t.Errorf("Float32(%f,%f): want %f, got %f", test.a, test.b, test.want, got)
 			}
 		})
 	}
@@ -198,7 +198,7 @@ func TestFloat64(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := Float64(test.a, test.b); test.want != got {
-				t.Fatalf("Float64(%f,%f): want %f, got %f", test.a, test.b, test.want, got)
+				t.Errorf("Float64(%f,%f): want %f, got %f", test.a, test.b, test.want, got)
 			}
 		})
 	}
@@ -238,7 +238,7 @@ func TestString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.a, test.b); test.want != got {
-				t.Fatalf("String(%q,%q): want %q, got %q", test.a, test.b, test.want, got)
+				t.Errorf("String(%q,%q): want %q, got %q", test.a, test.b, test.want, got)
 			}
 		})
 	}
