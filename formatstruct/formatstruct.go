@@ -1,3 +1,4 @@
+// Package formatstruct is a shitty way to format objects.
 package formatstruct
 
 import (
