@@ -8,8 +8,8 @@ import (
 
 // ErrorCollector accumulates errors so they can be joined.
 type ErrorCollector interface {
-	// Accumulates `err` if it is not nil
-	Add(err error)
+	// Accumulates `err` if it is not nil, return true if the error was added
+	Add(err error) bool
 
 	// Creates an error from all accumulated non-nil errors
 	Build() error
@@ -27,10 +27,12 @@ type errorCollector struct {
 	errs []error
 }
 
-func (e *errorCollector) Add(err error) {
+func (e *errorCollector) Add(err error) bool {
 	if err != nil {
 		e.errs = append(e.errs, err)
+		return true
 	}
+	return false
 }
 
 func (e *errorCollector) Build() error {
@@ -51,12 +53,14 @@ type threadSafeCollector struct {
 	mu   sync.Mutex
 }
 
-func (e *threadSafeCollector) Add(err error) {
+func (e *threadSafeCollector) Add(err error) bool {
 	if err != nil {
 		e.mu.Lock()
 		defer e.mu.Unlock()
 		e.errs = append(e.errs, err)
+		return true
 	}
+	return false
 }
 
 func (e *threadSafeCollector) Build() error {
