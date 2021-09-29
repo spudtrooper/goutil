@@ -92,6 +92,9 @@ func MakeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error
 	if opts.Headless {
 		args = append(args, "--headless")
 	}
+	if !opts.Verbose {
+		args = append(args, "--silent")
+	}
 	caps := selenium.Capabilities{"browserName": "chrome"}
 	chromeCaps := chrome.Capabilities{
 		Path: "",
