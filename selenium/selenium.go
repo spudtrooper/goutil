@@ -25,41 +25,27 @@ type MakeWebDriverOptions struct {
 	Port             int
 }
 
-func findChromeDriver() string {
-	paths := []string{
-		"/opt/homebrew/bin/chromedriver",
-		"/usr/local/bin/chromedriver",
-	}
-	for _, f := range paths {
-		if io.FileExists(f) {
-			return f
-		}
-	}
-	return ""
-}
+type WebDriverProvider func() (selenium.WebDriver, func(), error)
 
-func getSeleniumPath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	res := path.Join(home, ".selenium.jar")
-	if io.FileExists(res) {
-		log.Printf("selenium jar present: %s", res)
-	} else {
-		decoded, err := base64.StdEncoding.DecodeString(seleniumServerJar)
-		if err != nil {
-			return "", errors.Errorf("base64.StdEncoding: %v", err)
+func MakeWebDriverProvider(opts MakeWebDriverOptions) WebDriverProvider {
+	var wd selenium.WebDriver
+	var cancel func()
+	return func() (selenium.WebDriver, func(), error) {
+		if wd != nil && cancel != nil {
+			return wd, cancel, nil
 		}
-		log.Printf("writing selenium jar to %s", res)
-		if err := ioutil.WriteFile(res, decoded, 0755); err != nil {
-			return "", errors.Errorf("ioutil.WriteFile(%q): %v", res, err)
-		}
+		w, c, err := makeWebDriver(opts)
+		wd = w
+		cancel = c
+		return w, c, err
 	}
-	return res, nil
 }
 
 func MakeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error) {
+	return makeWebDriver(opts)
+}
+
+func makeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error) {
 	seleniumPath := opts.SeleniumPath
 	if seleniumPath == "" {
 		seleniumPathTmp, err := getSeleniumPath()
@@ -110,6 +96,40 @@ func MakeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error
 		wd.Quit()
 		service.Stop()
 	}, nil
+}
+
+func findChromeDriver() string {
+	paths := []string{
+		"/opt/homebrew/bin/chromedriver",
+		"/usr/local/bin/chromedriver",
+	}
+	for _, f := range paths {
+		if io.FileExists(f) {
+			return f
+		}
+	}
+	return ""
+}
+
+func getSeleniumPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	res := path.Join(home, ".selenium.jar")
+	if io.FileExists(res) {
+		log.Printf("selenium jar present: %s", res)
+	} else {
+		decoded, err := base64.StdEncoding.DecodeString(seleniumServerJar)
+		if err != nil {
+			return "", errors.Errorf("base64.StdEncoding: %v", err)
+		}
+		log.Printf("writing selenium jar to %s", res)
+		if err := ioutil.WriteFile(res, decoded, 0755); err != nil {
+			return "", errors.Errorf("ioutil.WriteFile(%q): %v", res, err)
+		}
+	}
+	return res, nil
 }
 
 func FindElement(wd selenium.WebDriver, tag, text string) (selenium.WebElement, error) {
