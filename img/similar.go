@@ -141,12 +141,11 @@ func createDiffMatrix(a, b haar.Matrix) haar.Matrix {
 			i := r*width + c
 			ca := a.Coefs[i]
 			cb := b.Coefs[i]
-			cd := haar.Coef{
+			diff.Coefs[i] = haar.Coef{
 				ca[0] - cb[0],
 				ca[1] - cb[1],
 				ca[2] - cb[2],
 			}
-			diff.Coefs[i] = cd
 		}
 	}
 	return diff
