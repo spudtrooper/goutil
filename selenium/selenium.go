@@ -65,6 +65,8 @@ func makeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error
 	if opts.Verbose {
 		selOpts = append(selOpts, selenium.Output(os.Stderr))
 		selenium.SetDebug(true)
+	} else {
+		selenium.SetDebug(
 	}
 	service, err := selenium.NewSeleniumService(seleniumPath, port, selOpts...)
 	if err != nil {
