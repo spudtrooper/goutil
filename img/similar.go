@@ -3,10 +3,15 @@ package img
 
 import (
 	"image"
+	"image/png"
+	"io"
 	"log"
+	"math"
+	"os"
 
 	"github.com/go-errors/errors"
 	"github.com/nfnt/resize"
+	"github.com/rivo/duplo"
 	"github.com/rivo/duplo/haar"
 )
 
@@ -53,8 +58,79 @@ func SimilarMaxDiffs(maxDiffs uint) SimilarOptions {
 	}
 }
 
-// Similar compares images and returns whether they are "similar"
-func Similar(a, b image.Image, inputOpts ...SimilarOptions) (bool, error) {
+type ImageWithPath interface {
+	Image() (image.Image, error)
+	Path() string
+}
+
+type imageWithPath struct {
+	path     string
+	decodeFn func(r io.Reader) (image.Image, error)
+}
+
+func (i *imageWithPath) Image() (image.Image, error) {
+	file, err := os.Open(i.path)
+	if err != nil {
+		return nil, err
+	}
+	img, err := i.decodeFn(file)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
+func (i *imageWithPath) Path() string {
+	return i.path
+}
+
+func Png(f string) ImageWithPath {
+	return &imageWithPath{path: f, decodeFn: png.Decode}
+}
+
+func Similar(a, b ImageWithPath, inputOpts ...SimilarOptions) (bool, error) {
+	opts := &similarOptionsImpl{
+		verboseDiffs: false,
+		threshold:    .01,
+		factor:       5,
+		sample:       5,
+		maxDiffs:     0,
+	}
+	for _, o := range inputOpts {
+		o(opts)
+	}
+
+	store := duplo.New()
+
+	imga, err := a.Image()
+	if err != nil {
+		return false, err
+	}
+	ha, _ := duplo.CreateHash(imga)
+	store.Add(a.Path(), ha)
+
+	imgb, err := b.Image()
+	if err != nil {
+		return false, err
+	}
+	hb, _ := duplo.CreateHash(imgb)
+	store.Add(b.Path(), hb)
+
+	var diffs uint
+	for i := range ha.Thresholds {
+		ta := ha.Thresholds[i]
+		tb := hb.Thresholds[i]
+		if math.Abs(ta-tb) > opts.threshold {
+			diffs++
+		}
+	}
+
+	similar := diffs <= opts.maxDiffs
+	return similar, nil
+}
+
+// SimilarNaive compares images and returns whether they are "similar"
+func SimilarNaive(a, b image.Image, inputOpts ...SimilarOptions) (bool, error) {
 	opts := &similarOptionsImpl{
 		verboseDiffs: false,
 		threshold:    .01,
