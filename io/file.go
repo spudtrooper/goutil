@@ -34,3 +34,21 @@ func Copy(src string, dst string) error {
 	}
 	return nil
 }
+
+func WriteFile(f string, b []byte) error {
+	if err := os.MkdirAll(path.Dir(f), 0755); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(f, b, 0755); err != nil {
+		return err
+	}
+	return nil
+}
+
+func isDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
