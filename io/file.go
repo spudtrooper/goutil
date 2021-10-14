@@ -45,7 +45,7 @@ func WriteFile(f string, b []byte) error {
 	return nil
 }
 
-func isDir(path string) bool {
+func IsDir(path string) bool {
 	s, err := os.Stat(path)
 	if err != nil {
 		return false
