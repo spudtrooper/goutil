@@ -14,13 +14,8 @@ type Tasks interface {
 	LogSummary()
 }
 
-type Task interface {
-	Name() string
-	Fn() TaskFn
-}
-
 type Builder interface {
-	Add(name string, tsk TaskFn) Task
+	Add(name string, tsk TaskFn)
 	Build() Tasks
 }
 
@@ -35,12 +30,12 @@ type taskSummary struct {
 }
 
 type tasks struct {
-	tasks []Task
+	tasks []taskWrapper
 	diffs []taskSummary
 }
 
 type builder struct {
-	tasks []Task
+	tasks []taskWrapper
 }
 
 func MakeBuilder() Builder {
@@ -55,13 +50,12 @@ func (t *taskWrapper) Fn() TaskFn {
 	return t.fn
 }
 
-func (b *builder) Add(name string, fn TaskFn) Task {
-	t := &taskWrapper{
+func (b *builder) Add(name string, fn TaskFn) {
+	t := taskWrapper{
 		name: name,
 		fn:   fn,
 	}
 	b.tasks = append(b.tasks, t)
-	return t
 }
 
 func (b *builder) Build() Tasks {
