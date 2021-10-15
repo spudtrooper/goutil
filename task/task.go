@@ -42,14 +42,6 @@ func MakeBuilder() Builder {
 	return &builder{}
 }
 
-func (t *taskWrapper) Name() string {
-	return t.name
-}
-
-func (t *taskWrapper) Fn() TaskFn {
-	return t.fn
-}
-
 func (b *builder) Add(name string, fn TaskFn) {
 	t := taskWrapper{
 		name: name,
@@ -66,15 +58,15 @@ func (b *builder) Build() Tasks {
 
 func (t *tasks) Go() error {
 	for i, tsk := range t.tasks {
-		log.Printf("[%d/%d] %s", i+1, len(t.tasks), tsk.Name())
+		log.Printf("[%d/%d] %s", i+1, len(t.tasks), tsk.name)
 		start := time.Now()
-		if err := tsk.Fn()(); err != nil {
+		if err := tsk.fn(); err != nil {
 			return err
 		}
 		diff := time.Since(start)
-		log.Printf("[%d/%d] %s done in %v", i+0, len(t.tasks), tsk.Name(), diff)
+		log.Printf("[%d/%d] %s done in %v", i+0, len(t.tasks), tsk.name, diff)
 		t.diffs = append(t.diffs, taskSummary{
-			name: tsk.Name(),
+			name: tsk.name,
 			diff: diff,
 		})
 	}
