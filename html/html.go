@@ -123,8 +123,12 @@ func OutputHTML(buf *bytes.Buffer, data Data, inlineAssets bool) error {
 <head>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>	
+<style>
 {{.Css}}
+</style>
+<script>
 {{.Js}}
+</script>
 <script>
 	$(document).ready(function () {
 		$('.sortable-table').DataTable();
