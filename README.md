@@ -2,6 +2,11 @@
 
 Dumping ground for go libraries.
 
+## third party code
+
+* MDB: See the license in `third_party/mdb`
+* Selenium: See the license in `third_party/selemnium`
+
 ## errors
 Accumulate and join errors.
 
