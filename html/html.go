@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"strings"
 	"text/template"
+
+	"github.com/yosssi/gohtml"
 )
 
 type TableRowData []string
@@ -107,7 +109,17 @@ func outputTag(buf *bytes.Buffer, t tag, ss ...string) {
 		tagEnd(buf, t)
 	}
 }
-func OutputHTML(buf *bytes.Buffer, data Data, inlineAssets bool) error {
+
+func Output(buf *bytes.Buffer, data Data, inlineAssets bool) (string, error) {
+	var buf bytes.Buffer
+	if err := output(&buf, data); err != nil {
+		return "", err
+	}
+	formatted := gohtml.Format(buf.String())
+	return formatted, nil
+}
+
+func output(buf *bytes.Buffer, data Data) error {
 	pageStart := func() error {
 		css, err := base64.StdEncoding.DecodeString(cssAssets)
 		if err != nil {
