@@ -110,16 +110,16 @@ func outputTag(buf *bytes.Buffer, t tag, ss ...string) {
 	}
 }
 
-func Output(buf *bytes.Buffer, data Data, inlineAssets bool) (string, error) {
+func Render(data Data) (string, error) {
 	var buf bytes.Buffer
-	if err := output(&buf, data); err != nil {
+	if err := renderHTML(&buf, data); err != nil {
 		return "", err
 	}
 	formatted := gohtml.Format(buf.String())
 	return formatted, nil
 }
 
-func output(buf *bytes.Buffer, data Data) error {
+func renderHTML(buf *bytes.Buffer, data Data) error {
 	pageStart := func() error {
 		css, err := base64.StdEncoding.DecodeString(cssAssets)
 		if err != nil {
