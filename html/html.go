@@ -145,8 +145,8 @@ func renderHTML(buf *bytes.Buffer, data Data) error {
 	$(document).ready(function () {
 		$('.sortable-table').DataTable();
 		$('.dataTables_length').addClass('bs-select');
+		$('select[name="DataTables_Table_0_length"]').append($('<option>').attr('value', 9999999999999).text('All'));
 	});		
-	$('select[name="DataTables_Table_0_length"]').append($('<option>').attr('value', 9999999999999).text('All'));
 </script>
 </head>
 <body>
