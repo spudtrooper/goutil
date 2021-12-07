@@ -18,7 +18,9 @@ func Check(b bool, checkOpts ...CheckOption) {
 
 // Err fails if `err` is non-null
 func Err(err error) {
-	Check(err == nil, CheckMessage(err.Error()))
+	if err != nil {
+		Check(false, CheckMessage(err.Error()))
+	}
 }
 
 // CheckNonEmptyString fails if `s` is empty
