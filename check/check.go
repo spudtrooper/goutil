@@ -1,6 +1,9 @@
 package check
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type Name string
 
@@ -12,7 +15,7 @@ func Check(b bool, checkOpts ...CheckOption) {
 		if msg == "" {
 			msg = "check failure"
 		}
-		panic(msg)
+		log.Fatalf(msg)
 	}
 }
 

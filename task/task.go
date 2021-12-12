@@ -3,8 +3,11 @@
 package task
 
 import (
+	"bytes"
 	"log"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type TaskFn func() error
@@ -30,16 +33,19 @@ type taskSummary struct {
 }
 
 type tasks struct {
-	tasks []taskWrapper
-	diffs []taskSummary
+	tasks     []taskWrapper
+	diffs     []taskSummary
+	printDone bool
+	color     *color.Color
 }
 
 type builder struct {
+	opts  Options
 	tasks []taskWrapper
 }
 
-func MakeBuilder() Builder {
-	return &builder{}
+func MakeBuilder(opts ...Option) Builder {
+	return &builder{opts: MakeOptions(opts...)}
 }
 
 func (b *builder) Add(name string, fn TaskFn) {
@@ -52,19 +58,29 @@ func (b *builder) Add(name string, fn TaskFn) {
 
 func (b *builder) Build() Tasks {
 	return &tasks{
-		tasks: b.tasks,
+		tasks:     b.tasks,
+		printDone: b.opts.PrintDone(),
+		color:     b.opts.Color(),
 	}
 }
 
 func (t *tasks) Go() error {
 	for i, tsk := range t.tasks {
-		log.Printf("[%d/%d] %s", i+1, len(t.tasks), tsk.name)
+		if t.color != nil {
+			var buf bytes.Buffer
+			t.color.Fprintf(&buf, "[%d/%d] %s", i+1, len(t.tasks), tsk.name)
+			log.Println(buf.String())
+		} else {
+			log.Printf("[%d/%d] %s", i+1, len(t.tasks), tsk.name)
+		}
 		start := time.Now()
 		if err := tsk.fn(); err != nil {
 			return err
 		}
 		diff := time.Since(start)
-		log.Printf("[%d/%d] %s done in %v", i+0, len(t.tasks), tsk.name, diff)
+		if t.printDone {
+			log.Printf("[%d/%d] %s done in %v", i+0, len(t.tasks), tsk.name, diff)
+		}
 		t.diffs = append(t.diffs, taskSummary{
 			name: tsk.name,
 			diff: diff,
