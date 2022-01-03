@@ -151,6 +151,25 @@ func FindElement(wd selenium.WebDriver, tag, text string) (selenium.WebElement, 
 	return nil, nil
 }
 
+func FindElements(wd selenium.WebDriver, tag, text string) ([]selenium.WebElement, error) {
+	els, err := wd.FindElements(selenium.ByTagName, tag)
+	if err != nil {
+		return nil, err
+	}
+	res := []selenium.WebElement{}
+	for _, el := range els {
+		txt, err := el.Text()
+		if err != nil {
+			return nil, err
+		}
+		if txt == text {
+			res = append(res, el)
+		}
+	}
+	return res, nil
+}
+
+// TODO: This is stupid, should remove and have callers specify "button"
 func FindButton(wd selenium.WebDriver, text string) (selenium.WebElement, error) {
 	return FindElement(wd, "button", text)
 }
@@ -181,7 +200,7 @@ func WaitForElement(wd selenium.WebDriver, tagName, text string) (selenium.WebEl
 	var res selenium.WebElement
 	var cnt int
 	wd.Wait(func(wd selenium.WebDriver) (bool, error) {
-		log.Printf("waiting for div %s [%d] ...", text, cnt+1)
+		log.Printf("waiting for div %s %q [%d] ...", text, tagName, cnt+1)
 		cnt++
 		btn, err := FindElement(wd, tagName, text)
 		if err != nil {
@@ -189,6 +208,28 @@ func WaitForElement(wd selenium.WebDriver, tagName, text string) (selenium.WebEl
 		}
 		if btn != nil {
 			res = btn
+			return true, nil
+		}
+		return false, nil
+	})
+	if res == nil {
+		return nil, fmt.Errorf("couldn't find div with text: %s", text)
+	}
+	return res, nil
+}
+
+func WaitForElements(wd selenium.WebDriver, tagName, text string) ([]selenium.WebElement, error) {
+	var res []selenium.WebElement
+	var cnt int
+	wd.Wait(func(wd selenium.WebDriver) (bool, error) {
+		log.Printf("waiting for div %s %q [%d] ...", text, tagName, cnt+1)
+		cnt++
+		els, err := FindElements(wd, tagName, text)
+		if err != nil {
+			return false, err
+		}
+		if len(els) > 0 {
+			res = els
 			return true, nil
 		}
 		return false, nil
