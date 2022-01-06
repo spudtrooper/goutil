@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/spudtrooper/goutil/check"
+	"github.com/spudtrooper/goutil/io"
 )
 
 func chk(err error) {
@@ -31,4 +32,10 @@ func ReadAllFile(input string) string {
 	b, err := ioutil.ReadFile(input)
 	chk(err)
 	return string(b)
+}
+
+func ReadLines(input string) []string {
+	lines, err := io.ReadLines(input)
+	chk(err)
+	return lines
 }

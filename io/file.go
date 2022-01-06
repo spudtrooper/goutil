@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 func FileExists(f string) bool {
@@ -51,4 +52,12 @@ func IsDir(path string) bool {
 		return false
 	}
 	return s.IsDir()
+}
+
+func ReadLines(path string) ([]string, error) {
+	c, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(string(c), "\n"), nil
 }
