@@ -159,7 +159,7 @@ func Render(data Data, rOpts ...RenderOption) (string, error) {
 		return "", err
 	}
 	res := buf.String()
-	if !opts.Noformat() {
+	if !opts.NoFormat() {
 		res = gohtml.Format(res)
 	}
 	return res, nil
@@ -239,7 +239,7 @@ func RenderSimple(data Data, rOpts ...RenderOption) (string, error) {
 		return "", err
 	}
 	res := buf.String()
-	if !opts.Noformat() {
+	if !opts.NoFormat() {
 		res = gohtml.Format(res)
 	}
 	return res, nil
