@@ -152,13 +152,17 @@ func outputTag(buf *bytes.Buffer, t tag, ss ...string) {
 	}
 }
 
-func Render(data Data) (string, error) {
+func Render(data Data, rOpts ...RenderOption) (string, error) {
+	opts := MakeRenderOptions(rOpts...)
 	var buf bytes.Buffer
 	if err := renderHTML(&buf, data); err != nil {
 		return "", err
 	}
-	formatted := gohtml.Format(buf.String())
-	return formatted, nil
+	res := buf.String()
+	if !opts.Noformat() {
+		res = gohtml.Format(res)
+	}
+	return res, nil
 }
 
 func renderHTML(buf *bytes.Buffer, data Data) error {
@@ -228,13 +232,17 @@ func renderHTML(buf *bytes.Buffer, data Data) error {
 	return nil
 }
 
-func RenderSimple(data Data) (string, error) {
+func RenderSimple(data Data, rOpts ...RenderOption) (string, error) {
+	opts := MakeRenderOptions(rOpts...)
 	var buf bytes.Buffer
 	if err := renderSimpleHTML(&buf, data); err != nil {
 		return "", err
 	}
-	formatted := gohtml.Format(buf.String())
-	return formatted, nil
+	res := buf.String()
+	if !opts.Noformat() {
+		res = gohtml.Format(res)
+	}
+	return res, nil
 }
 
 func renderSimpleHTML(buf *bytes.Buffer, data Data) error {
