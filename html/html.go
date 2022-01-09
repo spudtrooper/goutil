@@ -62,6 +62,48 @@ func MakeDataEntityFromTable(data TableData) DataEntity {
 	return &dataEntityTable{data}
 }
 
+type dataEntityTableSimple struct {
+	data TableData
+}
+
+func (t *dataEntityTableSimple) Render(buf *bytes.Buffer) error {
+	tr := func(s ...string) { outputTag(buf, trTag, s...) }
+	td := func(s ...string) { outputTag(buf, tdTag, s...) }
+	th := func(s string, attrs ...attr) {
+		tagStart(buf, thTag)
+		out(buf, s)
+		tagEnd(buf, thTag)
+	}
+	table := func() {
+		out(buf, `<table border=1>`)
+	}
+
+	table()
+	tagStart(buf, theadTag)
+	tr()
+	for _, h := range t.data.Head {
+		th(h)
+	}
+	tagEnd(buf, trTag)
+	tagEnd(buf, theadTag)
+	tagStart(buf, tbodyTag)
+	for _, row := range t.data.Rows {
+		tr()
+		for _, d := range row {
+			td(d)
+		}
+		tagEnd(buf, trTag)
+	}
+	tagEnd(buf, tbodyTag)
+	tagEnd(buf, tableTag)
+
+	return nil
+}
+
+func MakeSimpleDataEntityFromTable(data TableData) DataEntity {
+	return &dataEntityTableSimple{data}
+}
+
 type Data struct {
 	Entities []DataEntity
 }
@@ -168,6 +210,44 @@ func renderHTML(buf *bytes.Buffer, data Data) error {
 	pageEnd := func() {
 		out(buf, `
 		</div>
+	</body>
+</html>
+		`)
+	}
+
+	if err := pageStart(); err != nil {
+		return err
+	}
+	for _, e := range data.Entities {
+		if err := e.Render(buf); err != nil {
+			return err
+		}
+	}
+	pageEnd()
+
+	return nil
+}
+
+func RenderSimple(data Data) (string, error) {
+	var buf bytes.Buffer
+	if err := renderSimpleHTML(&buf, data); err != nil {
+		return "", err
+	}
+	formatted := gohtml.Format(buf.String())
+	return formatted, nil
+}
+
+func renderSimpleHTML(buf *bytes.Buffer, data Data) error {
+	pageStart := func() error {
+		out(buf, `
+		<!doctype html>
+		<body>
+			`)
+		return nil
+	}
+
+	pageEnd := func() {
+		out(buf, `
 	</body>
 </html>
 		`)
