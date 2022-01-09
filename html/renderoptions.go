@@ -5,20 +5,20 @@ package html
 type RenderOption func(*renderOptionImpl)
 
 type RenderOptions interface {
-	Noformat() bool
+	NoFormat() bool
 }
 
-func RenderNoformat(noformat bool) RenderOption {
+func RenderNoFormat(noFormat bool) RenderOption {
 	return func(opts *renderOptionImpl) {
-		opts.noformat = noformat
+		opts.noFormat = noFormat
 	}
 }
 
 type renderOptionImpl struct {
-	noformat bool
+	noFormat bool
 }
 
-func (r *renderOptionImpl) Noformat() bool { return r.noformat }
+func (r *renderOptionImpl) NoFormat() bool { return r.noFormat }
 
 func makeRenderOptionImpl(opts ...RenderOption) *renderOptionImpl {
 	res := &renderOptionImpl{}
