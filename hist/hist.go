@@ -3,27 +3,67 @@ package hist
 import (
 	"fmt"
 	"sort"
+	"sync"
 )
 
 type Histogram interface {
-	Pairs() PairList
+	Pairs() Pairs
+	Add(key interface{}, val int)
 }
 
-type impl struct {
-	hist map[string]int
+func MakeHistogram(mOpts ...MakeHistogramOption) Histogram {
+	opts := MakeMakeHistogramOptions(mOpts...)
+	if opts.Sorted() {
+		return &sorted{base{hist: map[string]int{}}}
+
+	}
+	return &impl{base{hist: map[string]int{}}}
 }
 
-func MakeHistogram() Histogram {
-	return &impl{hist: map[string]int{}}
+func Sync(h Histogram) Histogram {
+	return &synced{h: h}
 }
 
-func (h *impl) Add(key interface{}) {
-	h.hist[fmt.Sprintf("%s", key)]++
+type base struct{ hist map[string]int }
+type impl struct{ base }
+type sorted struct{ base }
+
+type synced struct {
+	h  Histogram
+	mu sync.Mutex
+}
+
+func (h *synced) Add(key interface{}, val int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.h.Add(key, val)
+}
+
+func (h *synced) Pairs() Pairs {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.h.Pairs()
+}
+
+func (h *base) Add(key interface{}, val int) {
+	h.hist[fmt.Sprintf("%s", key)] += val
+}
+
+func (h *impl) Pairs() Pairs {
+	var res Pairs
+	for k, v := range h.hist {
+		res = append(res, Pair{k, v})
+	}
+	return res
+}
+
+func (h *sorted) Pairs() Pairs {
+	return sortMap(h.hist)
 }
 
 // https://stackoverflow.com/questions/18695346/how-can-i-sort-a-mapstringint-by-its-values
-func sortMap(wordFrequencies map[string]int) PairList {
-	pl := make(PairList, len(wordFrequencies))
+func sortMap(wordFrequencies map[string]int) Pairs {
+	pl := make(Pairs, len(wordFrequencies))
 	i := 0
 	for k, v := range wordFrequencies {
 		pl[i] = Pair{k, v}
@@ -38,8 +78,8 @@ type Pair struct {
 	Value int
 }
 
-type PairList []Pair
+type Pairs []Pair
 
-func (p PairList) Len() int           { return len(p) }
-func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
-func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p Pairs) Len() int           { return len(p) }
+func (p Pairs) Less(i, j int) bool { return p[i].Value < p[j].Value }
+func (p Pairs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }

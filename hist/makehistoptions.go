@@ -1,6 +1,6 @@
 package hist
 
-// genopts --opt_type=MakeHistogramOption --prefix=MakeHistogram --prefix_opts_type --outfile=hist/makehistoptions.go 'sorted'
+// genopts --opt_type=MakeHistogramOption --prefix=MakeHistogram --outfile=hist/makehistoptions.go 'sorted'
 
 type MakeHistogramOption func(*makeHistogramOptionImpl)
 
