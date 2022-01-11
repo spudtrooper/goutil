@@ -1,24 +1,33 @@
 package hist
 
-// genopts --opt_type=MakeHistogramOption --prefix=MakeHistogram --outfile=hist/makehistoptions.go 'sorted'
+// genopts --opt_type=MakeHistogramOption --prefix=MakeHistogram --outfile=hist/makehistoptions.go 'sortAsc' 'sortDesc'
 
 type MakeHistogramOption func(*makeHistogramOptionImpl)
 
 type MakeHistogramOptions interface {
-	Sorted() bool
+	SortAsc() bool
+	SortDesc() bool
 }
 
-func MakeHistogramSorted(sorted bool) MakeHistogramOption {
+func MakeHistogramSortAsc(sortAsc bool) MakeHistogramOption {
 	return func(opts *makeHistogramOptionImpl) {
-		opts.sorted = sorted
+		opts.sortAsc = sortAsc
+	}
+}
+
+func MakeHistogramSortDesc(sortDesc bool) MakeHistogramOption {
+	return func(opts *makeHistogramOptionImpl) {
+		opts.sortDesc = sortDesc
 	}
 }
 
 type makeHistogramOptionImpl struct {
-	sorted bool
+	sortAsc  bool
+	sortDesc bool
 }
 
-func (m *makeHistogramOptionImpl) Sorted() bool { return m.sorted }
+func (m *makeHistogramOptionImpl) SortAsc() bool  { return m.sortAsc }
+func (m *makeHistogramOptionImpl) SortDesc() bool { return m.sortDesc }
 
 func makeMakeHistogramOptionImpl(opts ...MakeHistogramOption) *makeHistogramOptionImpl {
 	res := &makeHistogramOptionImpl{}

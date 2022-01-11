@@ -13,9 +13,11 @@ type Histogram interface {
 
 func MakeHistogram(mOpts ...MakeHistogramOption) Histogram {
 	opts := MakeMakeHistogramOptions(mOpts...)
-	if opts.Sorted() {
-		return &sorted{base{hist: map[string]int{}}}
-
+	if opts.SortDesc() {
+		return &desc{base{hist: map[string]int{}}}
+	}
+	if opts.SortAsc() {
+		return &asc{base{hist: map[string]int{}}}
 	}
 	return &impl{base{hist: map[string]int{}}}
 }
@@ -26,7 +28,8 @@ func Sync(h Histogram) Histogram {
 
 type base struct{ hist map[string]int }
 type impl struct{ base }
-type sorted struct{ base }
+type desc struct{ base }
+type asc struct{ base }
 
 type synced struct {
 	h  Histogram
@@ -57,20 +60,27 @@ func (h *impl) Pairs() Pairs {
 	return res
 }
 
-func (h *sorted) Pairs() Pairs {
-	return sortMap(h.hist)
+func (h *desc) Pairs() Pairs {
+	ps := makePairs(h.hist)
+	sort.Sort(sort.Reverse(ps))
+	return ps
+}
+
+func (h *asc) Pairs() Pairs {
+	ps := makePairs(h.hist)
+	sort.Sort(ps)
+	return ps
 }
 
 // https://stackoverflow.com/questions/18695346/how-can-i-sort-a-mapstringint-by-its-values
-func sortMap(wordFrequencies map[string]int) Pairs {
-	pl := make(Pairs, len(wordFrequencies))
+func makePairs(wordFrequencies map[string]int) Pairs {
+	ps := make(Pairs, len(wordFrequencies))
 	i := 0
 	for k, v := range wordFrequencies {
-		pl[i] = Pair{k, v}
+		ps[i] = Pair{k, v}
 		i++
 	}
-	sort.Sort(sort.Reverse(pl))
-	return pl
+	return ps
 }
 
 type Pair struct {
