@@ -33,20 +33,26 @@ func Exec(collection chan interface{}, threads int, fn func(interface{}) (interf
 }
 
 func LazyDrain(results chan interface{}, errors chan error) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	WaitFor(func() {
 		for r := range results {
 			log.Printf("result: %v", r)
 		}
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	}, func() {
 		for e := range errors {
 			log.Printf("error: %v", e)
 		}
-	}()
+	})
+}
+
+func WaitFor(fns ...func()) {
+	var wg sync.WaitGroup
+	for _, fn := range fns {
+		fn := fn
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn()
+		}()
+	}
 	wg.Wait()
 }
