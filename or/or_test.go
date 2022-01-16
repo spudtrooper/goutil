@@ -2,6 +2,7 @@ package or
 
 import (
 	"testing"
+	"time"
 )
 
 func TestInt(t *testing.T) {
@@ -11,7 +12,7 @@ func TestInt(t *testing.T) {
 		want int
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    0,
 			b:    0,
 			want: 0,
@@ -51,7 +52,7 @@ func TestInt32(t *testing.T) {
 		want int32
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    0,
 			b:    0,
 			want: 0,
@@ -91,7 +92,7 @@ func TestInt64(t *testing.T) {
 		want int64
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    0,
 			b:    0,
 			want: 0,
@@ -131,7 +132,7 @@ func TestFloat32(t *testing.T) {
 		want float32
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    0,
 			b:    0,
 			want: 0,
@@ -171,7 +172,7 @@ func TestFloat64(t *testing.T) {
 		want float64
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    0,
 			b:    0,
 			want: 0,
@@ -211,7 +212,7 @@ func TestString(t *testing.T) {
 		want string
 	}{
 		{
-			name: "non-defaults",
+			name: "defaults",
 			a:    "",
 			b:    "",
 			want: "",
@@ -239,6 +240,41 @@ func TestString(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.a, test.b); test.want != got {
 				t.Errorf("String(%q,%q): want %q, got %q", test.a, test.b, test.want, got)
+			}
+		})
+	}
+}
+
+func TestTime(t *testing.T) {
+	now := time.Now()
+	var tests = []struct {
+		name string
+		a, b time.Time
+		want time.Time
+	}{
+		{
+			name: "defaults",
+			a:    time.Time{},
+			b:    time.Time{},
+			want: time.Time{},
+		},
+		{
+			name: "default non-default",
+			a:    now,
+			b:    time.Time{},
+			want: now,
+		},
+		{
+			name: "non-default non-default",
+			a:    now,
+			b:    now.Add(1 * time.Second),
+			want: now,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if want, got := test.want, Time(test.a, test.b); want.Unix() != got.Unix() {
+				t.Errorf("Time(%v,%v): want %v, got %v", test.a, test.b, want, got)
 			}
 		})
 	}

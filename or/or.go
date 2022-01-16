@@ -3,6 +3,8 @@
 // known to history.
 package or
 
+import "time"
+
 // Int returns a if a != 0, otherwise b
 func Int(a, b int) int {
 	if a != 0 {
@@ -46,6 +48,14 @@ func Float32(a, b float32) float32 {
 // Float64 returns a if a != 0, otherwise b
 func Float64(a, b float64) float64 {
 	if a != 0 {
+		return a
+	}
+	return b
+}
+
+// Time returns a if a.IsZero(), otherwise b
+func Time(a, b time.Time) time.Time {
+	if !a.IsZero() {
 		return a
 	}
 	return b
