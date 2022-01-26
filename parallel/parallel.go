@@ -5,6 +5,11 @@ import (
 	"sync"
 )
 
+func ExecAndDrain(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error)) {
+	res, errs := Exec(collection, threads, fn)
+	EmptyDrain(res, errs)
+}
+
 func Exec(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error)) (chan interface{}, chan error) {
 	results := make(chan interface{})
 	errors := make(chan error)
@@ -40,6 +45,16 @@ func LazyDrain(results chan interface{}, errors chan error) {
 	}, func() {
 		for e := range errors {
 			log.Printf("error: %v", e)
+		}
+	})
+}
+
+func EmptyDrain(results chan interface{}, errors chan error) {
+	WaitFor(func() {
+		for range results {
+		}
+	}, func() {
+		for range errors {
 		}
 	})
 }

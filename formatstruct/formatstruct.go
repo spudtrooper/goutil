@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/spudtrooper/goutil/check"
 )
 
 var (
@@ -33,6 +35,20 @@ func (k *keyTransform) Transform(val string) string {
 
 func KeyTransform(key string, fn func(string) string) Option {
 	return &keyTransform{key: key, fn: fn}
+}
+
+func MustFormatString(o interface{}, opts ...Option) string {
+	res, err := FormatString(o, opts...)
+	check.Err(err)
+	return res
+}
+
+func FormatString(o interface{}, opts ...Option) (string, error) {
+	ss, err := Format(o, opts...)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(ss, "\n"), nil
 }
 
 func Format(o interface{}, opts ...Option) ([]string, error) {
