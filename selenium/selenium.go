@@ -23,6 +23,7 @@ type MakeWebDriverOptions struct {
 	ChromeDriverPath string
 	SeleniumPath     string
 	Port             int
+	Host             string
 }
 
 type WebDriverProvider func() (selenium.WebDriver, func(), error)
@@ -89,7 +90,13 @@ func makeWebDriver(opts MakeWebDriverOptions) (selenium.WebDriver, func(), error
 		Args: args,
 	}
 	caps.AddChrome(chromeCaps)
-	wd, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
+	var host string
+	if opts.Host != "" {
+		host = opts.Host
+	} else {
+		host = fmt.Sprintf("http://localhost:%d/wd/hub", port)
+	}
+	wd, err := selenium.NewRemote(caps, host)
 	if err != nil {
 		return nil, nil, err
 	}
