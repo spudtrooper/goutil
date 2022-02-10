@@ -89,6 +89,18 @@ func TestPrintf(t *testing.T) {
 				},
 			},
 		},
+		{
+			tmpl:     "uri: %s",
+			args:     []interface{}{"http://foo.com"},
+			wantTmpl: "uri: %s",
+			wantArgs: []interface{}{"http://foo.com"},
+			wantTrans: []transform{
+				{
+					format: "%s",
+					col:    globalLogger.uri,
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		name := or.String(test.name, test.tmpl)
@@ -99,16 +111,11 @@ func TestPrintf(t *testing.T) {
 			}
 			l.Printf(test.tmpl, test.args...)
 
-			gotTmpl, gotArgs := l.printf(test.tmpl, test.args...)
+			gotTmpl, gotArgs, gotTrans := l.printf(test.tmpl, test.args...)
 			if want, got := test.wantTmpl, gotTmpl; want != got {
 				t.Errorf("args: want != got: %v %v", want, got)
 			}
 			if want, got := test.wantArgs, gotArgs; !reflect.DeepEqual(want, got) {
-				t.Errorf("args: want != got: %v %v", want, got)
-			}
-
-			gotTmpl, gotTrans := l.convert(test.tmpl)
-			if want, got := test.wantTmpl, gotTmpl; want != got {
 				t.Errorf("args: want != got: %v %v", want, got)
 			}
 			if want, got := test.wantTrans, gotTrans; !reflect.DeepEqual(want, got) {

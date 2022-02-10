@@ -13,6 +13,7 @@ type logger struct {
 	normal  color.Color
 	str     color.Color
 	boolean color.Color
+	uri     color.Color
 }
 
 type transform struct {
@@ -22,26 +23,26 @@ type transform struct {
 
 // Println transforms the output be colorized according to the current rules
 func (l *logger) Printf(tmpl string, args ...interface{}) {
-	newTmpl, newArgs := l.printf(tmpl, args...)
+	newTmpl, newArgs, _ := l.printf(tmpl, args...)
 	log.Printf(newTmpl, newArgs...)
 }
 
-func (l *logger) printf(tmpl string, args ...interface{}) (string, []interface{}) {
-	newTmpl, trans := l.convert(tmpl)
+func (l *logger) printf(tmpl string, args ...interface{}) (string, []interface{}, []transform) {
+	newTmpl, trans := l.convert(tmpl, args)
 	var newArgs []interface{}
 	for i, arg := range args {
 		t := trans[i]
 		newArg := t.col.Sprintf(t.format, arg)
 		newArgs = append(newArgs, newArg)
 	}
-	return newTmpl, newArgs
+	return newTmpl, newArgs, trans
 }
 
 var formatRE = regexp.MustCompile(`(%[\-\+]?\d*\.?\d*[a-z])`)
 
-func (l *logger) convert(tmpl string) (string, []transform) {
+func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) {
 	var trans []transform
-	for _, m := range formatRE.FindAllStringSubmatch(tmpl, -1) {
+	for i, m := range formatRE.FindAllStringSubmatch(tmpl, -1) {
 		format := m[1]
 		col := l.normal
 		switch last := string(format[len(format)-1]); last {
@@ -51,6 +52,10 @@ func (l *logger) convert(tmpl string) (string, []transform) {
 			col = l.boolean
 		case "q":
 			col = l.str
+		case "s":
+			if isURI(args[i]) {
+				col = l.uri
+			}
 		}
 		t := transform{
 			format: format,
@@ -62,7 +67,16 @@ func (l *logger) convert(tmpl string) (string, []transform) {
 	newTmpl := formatRE.ReplaceAllString(tmpl, "%s")
 
 	return newTmpl, trans
+}
 
+var uriRE = regexp.MustCompile(`^[a-z]+:\/\/.*`)
+
+func isURI(s interface{}) bool {
+	switch v := s.(type) {
+	case string:
+		return uriRE.MatchString(v)
+	}
+	return false
 }
 
 // Println delegates straight to `log.Println`

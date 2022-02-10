@@ -10,6 +10,7 @@ func init() {
 		normal:  *color.New(color.FgWhite),
 		str:     *color.New(color.FgMagenta),
 		boolean: *color.New(color.FgYellow),
+		uri:     *color.New(color.FgRed),
 	}
 }
 
