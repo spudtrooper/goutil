@@ -9,6 +9,11 @@ import (
 	"github.com/spudtrooper/goutil/sets"
 )
 
+var (
+	formatRE = regexp.MustCompile(`(%[\-\+\d\.e]*[a-z])`)
+	uriRE    = regexp.MustCompile(`^[a-z]+:\/\/.*`)
+)
+
 type logger struct {
 	number         color.Color
 	normal         color.Color
@@ -52,6 +57,11 @@ func (l *logger) Printf(tmpl string, args ...interface{}) {
 	log.Printf(newTmpl, newArgs...)
 }
 
+// Println delegates straight to `log.Println`
+func (l *logger) Println(s string) {
+	log.Println(s)
+}
+
 func (l *logger) printf(tmpl string, args ...interface{}) (string, []interface{}, []transform) {
 	newTmpl, trans := l.convert(tmpl, args)
 	var newArgs []interface{}
@@ -62,8 +72,6 @@ func (l *logger) printf(tmpl string, args ...interface{}) (string, []interface{}
 	}
 	return newTmpl, newArgs, trans
 }
-
-var formatRE = regexp.MustCompile(`(%[\-\+]?\d*\.?\d*[a-z])`)
 
 func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) {
 	var trans []transform
@@ -110,17 +118,10 @@ func (l *logger) isSpecialString(s interface{}) bool {
 	return false
 }
 
-var uriRE = regexp.MustCompile(`^[a-z]+:\/\/.*`)
-
 func isURI(s interface{}) bool {
 	switch v := s.(type) {
 	case string:
 		return uriRE.MatchString(v)
 	}
 	return false
-}
-
-// Println delegates straight to `log.Println`
-func (l *logger) Println(s string) {
-	log.Println(s)
 }
