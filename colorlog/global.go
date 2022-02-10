@@ -6,11 +6,12 @@ var globalLogger *logger
 
 func init() {
 	globalLogger = &logger{
-		number:  *color.New(color.FgCyan),
-		normal:  *color.New(color.FgWhite),
-		str:     *color.New(color.FgMagenta),
-		boolean: *color.New(color.FgYellow),
-		uri:     *color.New(color.FgRed),
+		number:        *color.New(color.FgCyan),
+		normal:        *color.New(color.FgWhite),
+		str:           *color.New(color.FgMagenta),
+		boolean:       *color.New(color.FgYellow),
+		uri:           *color.New(color.FgHiGreen).Add(color.Underline),
+		specialString: *color.New(color.FgHiRed),
 	}
 }
 
@@ -22,4 +23,39 @@ func Printf(tmpl string, args ...interface{}) {
 // Println delegates straight to `log.Println`
 func Println(s string) {
 	globalLogger.Println(s)
+}
+
+// Number sets the global number color
+func Number(c color.Color) {
+	globalLogger.Number(c)
+}
+
+// Normal sets the global normal color
+func Normal(c color.Color) {
+	globalLogger.Normal(c)
+}
+
+// String sets the global string color
+func String(c color.Color) {
+	globalLogger.String(c)
+}
+
+// Bool sets the global bool color
+func Bool(c color.Color) {
+	globalLogger.Bool(c)
+}
+
+// URI sets the global uri color
+func URI(c color.Color) {
+	globalLogger.URI(c)
+}
+
+// SpecialStrings sets the global specialstrings set
+func SpecialStrings(ss ...string) {
+	globalLogger.SpecialStrings(ss...)
+}
+
+// SpecialString sets the global specialstring color
+func SpecialString(c color.Color) {
+	globalLogger.SpecialString(c)
 }

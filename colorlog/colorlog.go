@@ -6,14 +6,39 @@ import (
 	"regexp"
 
 	"github.com/fatih/color"
+	"github.com/spudtrooper/goutil/sets"
 )
 
 type logger struct {
-	number  color.Color
-	normal  color.Color
-	str     color.Color
-	boolean color.Color
-	uri     color.Color
+	number         color.Color
+	normal         color.Color
+	str            color.Color
+	boolean        color.Color
+	uri            color.Color
+	specialStrings sets.StringSet
+	specialString  color.Color
+}
+
+func (l *logger) Number(c color.Color) {
+	l.number = c
+}
+func (l *logger) Normal(c color.Color) {
+	l.normal = c
+}
+func (l *logger) String(c color.Color) {
+	l.str = c
+}
+func (l *logger) Bool(c color.Color) {
+	l.boolean = c
+}
+func (l *logger) URI(c color.Color) {
+	l.uri = c
+}
+func (l *logger) SpecialStrings(ss ...string) {
+	l.specialStrings = sets.String(ss)
+}
+func (l *logger) SpecialString(c color.Color) {
+	l.specialString = c
 }
 
 type transform struct {
@@ -51,9 +76,15 @@ func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) 
 		case "t":
 			col = l.boolean
 		case "q":
-			col = l.str
+			if l.isSpecialString(args[i]) {
+				col = l.specialString
+			} else {
+				col = l.str
+			}
 		case "s":
-			if isURI(args[i]) {
+			if l.isSpecialString(args[i]) {
+				col = l.specialString
+			} else if isURI(args[i]) {
 				col = l.uri
 			}
 		}
@@ -67,6 +98,16 @@ func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) 
 	newTmpl := formatRE.ReplaceAllString(tmpl, "%s")
 
 	return newTmpl, trans
+}
+
+func (l *logger) isSpecialString(s interface{}) bool {
+	switch v := s.(type) {
+	case string:
+		if l.specialStrings[v] {
+			return true
+		}
+	}
+	return false
 }
 
 var uriRE = regexp.MustCompile(`^[a-z]+:\/\/.*`)

@@ -5,9 +5,11 @@ import (
 	"testing"
 
 	"github.com/spudtrooper/goutil/or"
+	"github.com/spudtrooper/goutil/sets"
 )
 
 func TestPrintf(t *testing.T) {
+	globalLogger.specialStrings = sets.String([]string{"special"})
 	var tests = []struct {
 		name      string
 		tmpl      string
@@ -74,6 +76,30 @@ func TestPrintf(t *testing.T) {
 				{
 					format: "%s",
 					col:    globalLogger.normal,
+				},
+			},
+		},
+		{
+			tmpl:     "special string: %s",
+			args:     []interface{}{"special"},
+			wantTmpl: "special string: %s",
+			wantArgs: []interface{}{"special"},
+			wantTrans: []transform{
+				{
+					format: "%s",
+					col:    globalLogger.specialString,
+				},
+			},
+		},
+		{
+			tmpl:     "special quoted: %q",
+			args:     []interface{}{"special"},
+			wantTmpl: "special quoted: %s",
+			wantArgs: []interface{}{"\"special\""},
+			wantTrans: []transform{
+				{
+					format: "%q",
+					col:    globalLogger.specialString,
 				},
 			},
 		},
