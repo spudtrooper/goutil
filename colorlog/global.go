@@ -15,14 +15,19 @@ func init() {
 	}
 }
 
-// Println transforms the output be colorized according to the current rules
+// Printf transforms the output be colorized according to the current rules
 func Printf(tmpl string, args ...interface{}) {
 	globalLogger.Printf(tmpl, args...)
 }
 
+// Fatalf transforms the output be colorized according to the current rules
+func Fatalf(tmpl string, args ...interface{}) {
+	globalLogger.Fatalf(tmpl, args...)
+}
+
 // Println delegates straight to `log.Println`
-func Println(s string) {
-	globalLogger.Println(s)
+func Println(ss ...string) {
+	globalLogger.Println(ss...)
 }
 
 // Number sets the global number color

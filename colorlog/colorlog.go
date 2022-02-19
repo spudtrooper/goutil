@@ -57,9 +57,22 @@ func (l *logger) Printf(tmpl string, args ...interface{}) {
 	log.Printf(newTmpl, newArgs...)
 }
 
+// Fatalf transforms the output be colorized according to the current rules
+func (l *logger) Fatalf(tmpl string, args ...interface{}) {
+	newTmpl, newArgs, _ := l.printf(tmpl, args...)
+	log.Fatalf(newTmpl, newArgs...)
+}
+
 // Println delegates straight to `log.Println`
-func (l *logger) Println(s string) {
-	log.Println(s)
+func (l *logger) Println(ss ...string) {
+	if len(ss) == 0 {
+		log.Println()
+		return
+	}
+	if len(ss) != 1 {
+		panic("Println() takes either 0 or 1 arg")
+	}
+	log.Println(ss[0])
 }
 
 func (l *logger) printf(tmpl string, args ...interface{}) (string, []interface{}, []transform) {
