@@ -158,7 +158,7 @@ func request(method, url string, result interface{}, body io.Reader, rOpts ...Re
 			continue
 		}
 		for _, cookie := range v {
-			c := strings.SplitN(cookie, "; ", 1)[0]
+			c := strings.SplitN(cookie, "; ", 2)[0]
 			parts := strings.SplitN(c, "=", 2)
 			k, v := parts[0], ""
 			if len(parts) == 2 {
