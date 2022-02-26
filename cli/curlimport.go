@@ -100,12 +100,13 @@ func createCurlCode(c curlCmd) (string, error) {
 	const ()
 	for _, x := range c.uriParams {
 		v := x.val
-		if n, err := strconv.ParseBool(v); err == nil {
-			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeBool})
-			continue
-		}
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeInt})
+			continue
+		}
+		// Parse bools after ints, since 1 parses to true, probably 0 to false.
+		if n, err := strconv.ParseBool(v); err == nil {
+			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeBool})
 			continue
 		}
 		if n, err := strconv.ParseFloat(v, 64); err == nil {
@@ -116,7 +117,7 @@ func createCurlCode(c curlCmd) (string, error) {
 			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeComplex})
 			continue
 		}
-		urlParams = append(urlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
+		quotedUrlParams = append(quotedUrlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
 	}
 	for _, h := range c.headers {
 		if strings.ToLower(h.key) == "cookie" {
