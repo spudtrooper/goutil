@@ -1,4 +1,4 @@
-// Package cli is a helper for using github.com/spudtrooper/goutil.
+// curlimport will imort a curl command into the goutil/request framework.
 package cli
 
 import (
@@ -34,6 +34,25 @@ type curlCmd struct {
 	uriParams []uriParam
 	headers   []header
 }
+
+type renderedParam struct {
+	Key, Val string
+}
+
+type rawParam struct {
+	Key  string
+	Val  interface{}
+	Type rawParamType
+}
+type rawParamType string
+
+const (
+	rawParamTypeBool    rawParamType = "bool"
+	rawParamTypeInt     rawParamType = "int"
+	rawParamTypeFloat   rawParamType = "float"
+	rawParamTypeComplex rawParamType = "complex"
+	rawParamTypeString  rawParamType = "string"
+)
 
 func createCurlCode(c curlCmd) (string, error) {
 	if len(c.opts) > 0 {
@@ -74,36 +93,30 @@ func createCurlCode(c curlCmd) (string, error) {
 	log.Printf("result: %+v", res)
 	log.Printf("payload: %s", request.MustFormatString(payload))
 	`
-	type p struct {
-		Key, Val string
-	}
-	type param struct {
-		Key string
-		Val interface{}
-	}
-	var headers []p
-	var cookies []p
-	var urlParams []param
-	var quotedUrlParams []param
+	var headers []renderedParam
+	var cookies []renderedParam
+	var urlParams []rawParam
+	var quotedUrlParams []rawParam
+	const ()
 	for _, x := range c.uriParams {
 		v := x.val
 		if n, err := strconv.ParseBool(v); err == nil {
-			urlParams = append(urlParams, param{x.key, n})
+			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeBool})
 			continue
 		}
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
-			urlParams = append(urlParams, param{x.key, n})
+			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeInt})
 			continue
 		}
 		if n, err := strconv.ParseFloat(v, 64); err == nil {
-			urlParams = append(urlParams, param{x.key, n})
+			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeFloat})
 			continue
 		}
 		if n, err := strconv.ParseComplex(v, 64); err == nil {
-			urlParams = append(urlParams, param{x.key, n})
+			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeComplex})
 			continue
 		}
-		quotedUrlParams = append(quotedUrlParams, param{x.key, v})
+		urlParams = append(urlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
 	}
 	for _, h := range c.headers {
 		if strings.ToLower(h.key) == "cookie" {
@@ -120,18 +133,18 @@ func createCurlCode(c curlCmd) (string, error) {
 				} else {
 					return "", errors.Errorf("unexpected cookie parts: %+v", parts)
 				}
-				cookies = append(cookies, p{key, val})
+				cookies = append(cookies, renderedParam{key, val})
 			}
 		} else {
-			headers = append(headers, p{h.key, h.val})
+			headers = append(headers, renderedParam{h.key, h.val})
 		}
 	}
 	var data = struct {
 		URI             string
-		Headers         []p
-		Cookies         []p
-		URLParams       []param
-		QuotedURLParams []param
+		Headers         []renderedParam
+		Cookies         []renderedParam
+		URLParams       []rawParam
+		QuotedURLParams []rawParam
 	}{
 		URI:             c.uri,
 		Headers:         headers,
