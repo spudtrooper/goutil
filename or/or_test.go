@@ -279,3 +279,38 @@ func TestTime(t *testing.T) {
 		})
 	}
 }
+
+func TestDuration(t *testing.T) {
+	var unset time.Duration
+	var tests = []struct {
+		name string
+		a, b time.Duration
+		want time.Duration
+	}{
+		{
+			name: "defaults",
+			a:    unset,
+			b:    unset,
+			want: unset,
+		},
+		{
+			name: "default non-default",
+			a:    time.Second * 1,
+			b:    unset,
+			want: time.Second * 1,
+		},
+		{
+			name: "non-default non-default",
+			a:    time.Second * 1,
+			b:    time.Second * 2,
+			want: time.Second * 1,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if want, got := test.want, Duration(test.a, test.b); want != got {
+				t.Errorf("Time(%v,%v): want %v, got %v", test.a, test.b, want, got)
+			}
+		})
+	}
+}

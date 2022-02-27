@@ -60,3 +60,11 @@ func Time(a, b time.Time) time.Time {
 	}
 	return b
 }
+
+// Duration returns a if a != 0, otherwise  b
+func Duration(a, b time.Duration) time.Duration {
+	if a != 0 {
+		return a
+	}
+	return b
+}
