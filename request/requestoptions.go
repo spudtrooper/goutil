@@ -1,6 +1,8 @@
 package request
 
-// genopts --opt_type=RequestOption --prefix=Request --outfile=request/requestoptions.go 'extraHeaders:map[string]string' 'host:string' 'customPayload:interface{}' 'proxyURL:string'
+import "time"
+
+// genopts --opt_type=RequestOption --prefix=Request --outfile=request/requestoptions.go 'extraHeaders:map[string]string' 'host:string' 'customPayload:interface{}' 'proxyURL:string' 'timeout:time.Duration'
 
 type RequestOption func(*requestOptionImpl)
 
@@ -9,6 +11,7 @@ type RequestOptions interface {
 	Host() string
 	CustomPayload() interface{}
 	ProxyURL() string
+	Timeout() time.Duration
 }
 
 func RequestExtraHeaders(extraHeaders map[string]string) RequestOption {
@@ -35,17 +38,25 @@ func RequestProxyURL(proxyURL string) RequestOption {
 	}
 }
 
+func RequestTimeout(timeout time.Duration) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.timeout = timeout
+	}
+}
+
 type requestOptionImpl struct {
 	extraHeaders  map[string]string
 	host          string
 	customPayload interface{}
 	proxyURL      string
+	timeout       time.Duration
 }
 
 func (r *requestOptionImpl) ExtraHeaders() map[string]string { return r.extraHeaders }
 func (r *requestOptionImpl) Host() string                    { return r.host }
 func (r *requestOptionImpl) CustomPayload() interface{}      { return r.customPayload }
 func (r *requestOptionImpl) ProxyURL() string                { return r.proxyURL }
+func (r *requestOptionImpl) Timeout() time.Duration          { return r.timeout }
 
 func makeRequestOptionImpl(opts ...RequestOption) *requestOptionImpl {
 	res := &requestOptionImpl{}

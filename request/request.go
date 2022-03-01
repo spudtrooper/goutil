@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/flags"
+	"github.com/spudtrooper/goutil/or"
 )
 
 var (
@@ -28,6 +29,12 @@ type Param struct {
 
 type Params []Param
 
+// MakeParam creates a Param
+func MakeParam(key string, val interface{}) Param {
+	return Param{Key: key, Val: val}
+}
+
+// AddStringIfNotEmpty adds another params if val is not empty
 func (p Params) AddStringIfNotEmpty(key, val string) Params {
 	if val != "" {
 		return append(p, Param{key, val})
@@ -78,6 +85,7 @@ func Delete(url string, result interface{}, rOpts ...RequestOption) (*Response, 
 func request(method, uri string, result interface{}, body io.Reader, rOpts ...RequestOption) (*Response, error) {
 	opts := MakeRequestOptions(rOpts...)
 
+	timeout := or.Duration(opts.Timeout(), 10*time.Second)
 	start := time.Now()
 
 	var client *http.Client
@@ -88,9 +96,12 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 		}
 		client = &http.Client{
 			Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)},
+			Timeout:   timeout,
 		}
 	} else {
-		client = &http.Client{}
+		client = &http.Client{
+			Timeout: timeout,
+		}
 	}
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
