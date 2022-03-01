@@ -1,6 +1,6 @@
 package request
 
-// genopts --opt_type=RequestOption --prefix=Request --outfile=request/requestoptions.go 'extraHeaders:map[string]string' 'host:string' 'customPayload:interface{}'
+// genopts --opt_type=RequestOption --prefix=Request --outfile=request/requestoptions.go 'extraHeaders:map[string]string' 'host:string' 'customPayload:interface{}' 'proxyURL:string'
 
 type RequestOption func(*requestOptionImpl)
 
@@ -8,6 +8,7 @@ type RequestOptions interface {
 	ExtraHeaders() map[string]string
 	Host() string
 	CustomPayload() interface{}
+	ProxyURL() string
 }
 
 func RequestExtraHeaders(extraHeaders map[string]string) RequestOption {
@@ -28,15 +29,23 @@ func RequestCustomPayload(customPayload interface{}) RequestOption {
 	}
 }
 
+func RequestProxyURL(proxyURL string) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.proxyURL = proxyURL
+	}
+}
+
 type requestOptionImpl struct {
 	extraHeaders  map[string]string
 	host          string
 	customPayload interface{}
+	proxyURL      string
 }
 
 func (r *requestOptionImpl) ExtraHeaders() map[string]string { return r.extraHeaders }
 func (r *requestOptionImpl) Host() string                    { return r.host }
 func (r *requestOptionImpl) CustomPayload() interface{}      { return r.customPayload }
+func (r *requestOptionImpl) ProxyURL() string                { return r.proxyURL }
 
 func makeRequestOptionImpl(opts ...RequestOption) *requestOptionImpl {
 	res := &requestOptionImpl{}

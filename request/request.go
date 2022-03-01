@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/flags"
 )
 
@@ -74,13 +75,24 @@ func Delete(url string, result interface{}, rOpts ...RequestOption) (*Response, 
 	return request("DELETE", url, result, nil, rOpts...)
 }
 
-func request(method, url string, result interface{}, body io.Reader, rOpts ...RequestOption) (*Response, error) {
+func request(method, uri string, result interface{}, body io.Reader, rOpts ...RequestOption) (*Response, error) {
 	opts := MakeRequestOptions(rOpts...)
 
 	start := time.Now()
 
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, body)
+	var client *http.Client
+	if opts.ProxyURL() != "" {
+		proxyUrl, err := url.Parse(opts.ProxyURL())
+		if err != nil {
+			return nil, errors.Errorf("parsing proxy: %s: %v", opts.ProxyURL(), err)
+		}
+		client = &http.Client{
+			Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)},
+		}
+	} else {
+		client = &http.Client{}
+	}
+	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,7 @@ func request(method, url string, result interface{}, body io.Reader, rOpts ...Re
 		req.Header.Set(k, v)
 	}
 	if *requestDebug {
-		log.Printf("requesting %s %s", method, url)
+		log.Printf("requesting %s %s", method, uri)
 		if len(opts.ExtraHeaders()) > 0 {
 			log.Printf("  with extra headers:")
 			for k, v := range opts.ExtraHeaders() {
@@ -129,7 +141,7 @@ func request(method, url string, result interface{}, body io.Reader, rOpts ...Re
 			log.Printf("ignoring prettyPrintJSON error: %v", err)
 			prettyJSON = string(data)
 		}
-		log.Printf("from url %q have response %s", url, prettyJSON)
+		log.Printf("from url %q have response %s", uri, prettyJSON)
 		for k, vs := range resp.Header {
 			for _, v := range vs {
 				log.Printf("%s: %s", color.HiWhiteString(k), v)
