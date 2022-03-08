@@ -2,7 +2,7 @@ package task
 
 import "github.com/fatih/color"
 
-// genopts --outfile=task/options.go 'printDone' 'color:*color.Color'
+//go:generate genopts --outfile=options.go "printDone" "color:*color.Color"
 
 type Option func(*optionImpl)
 
