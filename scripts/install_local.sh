@@ -2,8 +2,5 @@
 
 set -e
 
-go build -o goutilctrl main.go
-cp goutilctrl ~/go/bin
-
-# Testing
-goutilctrl
+go build main.go
+cp main ~/go/bin/goutil
