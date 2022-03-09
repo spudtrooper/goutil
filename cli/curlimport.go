@@ -55,7 +55,7 @@ const (
 )
 
 func needsQueryEscape(s string) bool {
-	return strings.Contains(s, "%2F") || strings.Contains(s, "%2C")
+	return strings.Contains(s, "%2")
 }
 
 func createCurlCode(c curlCmd) (string, error) {
