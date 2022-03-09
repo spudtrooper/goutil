@@ -24,6 +24,8 @@ var (
 	curlCmdRE = regexp.MustCompile(`^curl([^']*)'([^']+)'`)
 	//  -H 'origin: https://seatgeek.com' \
 	headerRE = regexp.MustCompile(`\s*-H '([^:]+): ([^']+)'`)
+	//   --data-raw '{...}' \
+	dataRawRE = regexp.MustCompile(`\s*--data-raw '([^']+)'`)
 )
 
 type uriParam struct{ key, val string }
@@ -33,6 +35,7 @@ type curlCmd struct {
 	uri       string
 	uriParams []uriParam
 	headers   []header
+	data      string
 }
 
 type renderedParam struct {
@@ -93,8 +96,16 @@ func createCurlCode(c curlCmd) (string, error) {
 	if c := serializeCookie(); c != "" {
 		headers["cookie"] = c
 	}
+	body := ` + "`" + `{{.Data}}` + "`" + `
+
 	var payload interface{}
-	res, err := request.Get(uri, &payload, request.RequestExtraHeaders(headers))
+	var res *request.Response
+	var err error
+	if body == "" {
+		res, err = request.Get(uri, &payload, request.RequestExtraHeaders(headers))
+	} else {
+		res, err = request.Post(uri, &payload, strings.NewReader(body), request.RequestExtraHeaders(headers))
+	}
 	check.Err(err)
 	log.Printf("result: %+v", res)
 	log.Printf("payload: %s", request.MustFormatString(payload))
@@ -169,6 +180,7 @@ func createCurlCode(c curlCmd) (string, error) {
 		URLParams             []rawParam
 		QuotedURLParams       []rawParam
 		QueryEscapedURLParams []rawParam
+		Data                  string
 	}{
 		URI:                   c.uri,
 		Headers:               headers,
@@ -177,6 +189,7 @@ func createCurlCode(c curlCmd) (string, error) {
 		URLParams:             urlParams,
 		QuotedURLParams:       quotedUrlParams,
 		QueryEscapedURLParams: queryEscapedUrlParams,
+		Data:                  c.data,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
@@ -253,6 +266,10 @@ func curlImport(content, outfile string, run bool) error {
 		if m := headerRE.FindStringSubmatch(line); len(m) == 3 {
 			key, val := m[1], m[2]
 			c.headers = append(c.headers, header{key, val})
+		}
+		if m := dataRawRE.FindStringSubmatch(line); len(m) == 2 {
+			data := m[1]
+			c.data = data
 		}
 	}
 
