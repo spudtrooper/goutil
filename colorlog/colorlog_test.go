@@ -75,7 +75,7 @@ func TestPrintf(t *testing.T) {
 			wantTrans: []transform{
 				{
 					format: "%s",
-					col:    globalLogger.normal,
+					col:    globalLogger.str,
 				},
 			},
 		},

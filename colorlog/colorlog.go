@@ -107,6 +107,8 @@ func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) 
 				col = l.specialString
 			} else if isURI(args[i]) {
 				col = l.uri
+			} else {
+				col = l.str
 			}
 		}
 		t := transform{
