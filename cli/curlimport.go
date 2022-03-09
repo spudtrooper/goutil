@@ -54,6 +54,10 @@ const (
 	rawParamTypeString  rawParamType = "string"
 )
 
+func needsQueryEscape(s string) bool {
+	return strings.Contains(s, "%2F") || strings.Contains(s, "%2C")
+}
+
 func createCurlCode(c curlCmd) (string, error) {
 	if len(c.opts) > 0 {
 		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.opts)
@@ -61,6 +65,7 @@ func createCurlCode(c curlCmd) (string, error) {
 	t := `
 	uri := request.CreateRoute("{{.URI}}",
 		{{range .QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
+		{{end}}{{range .QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
 		{{end}}{{range .URLParams}}request.Param{"{{.Key}}", {{.Val}}},
 		{{end}}
 	)
@@ -95,8 +100,7 @@ func createCurlCode(c curlCmd) (string, error) {
 	`
 	var headers []renderedParam
 	var cookies []renderedParam
-	var urlParams []rawParam
-	var quotedUrlParams []rawParam
+	var urlParams, quotedUrlParams, queryEscapedUrlParams []rawParam
 	const ()
 	for _, x := range c.uriParams {
 		v := x.val
@@ -117,7 +121,15 @@ func createCurlCode(c curlCmd) (string, error) {
 			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeComplex})
 			continue
 		}
-		quotedUrlParams = append(quotedUrlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
+		if needsQueryEscape(v) {
+			unescaped, err := url.QueryUnescape(v)
+			if err != nil {
+				return "", errors.Errorf("url.QueryUnescape(%q): %v", v, err)
+			}
+			queryEscapedUrlParams = append(queryEscapedUrlParams, rawParam{Key: x.key, Val: unescaped, Type: rawParamTypeString})
+		} else {
+			quotedUrlParams = append(quotedUrlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
+		}
 	}
 	for _, h := range c.headers {
 		if strings.ToLower(h.key) == "cookie" {
@@ -141,17 +153,19 @@ func createCurlCode(c curlCmd) (string, error) {
 		}
 	}
 	var data = struct {
-		URI             string
-		Headers         []renderedParam
-		Cookies         []renderedParam
-		URLParams       []rawParam
-		QuotedURLParams []rawParam
+		URI                   string
+		Headers               []renderedParam
+		Cookies               []renderedParam
+		URLParams             []rawParam
+		QuotedURLParams       []rawParam
+		QueryEscapedURLParams []rawParam
 	}{
-		URI:             c.uri,
-		Headers:         headers,
-		Cookies:         cookies,
-		URLParams:       urlParams,
-		QuotedURLParams: quotedUrlParams,
+		URI:                   c.uri,
+		Headers:               headers,
+		Cookies:               cookies,
+		URLParams:             urlParams,
+		QuotedURLParams:       quotedUrlParams,
+		QueryEscapedURLParams: queryEscapedUrlParams,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
