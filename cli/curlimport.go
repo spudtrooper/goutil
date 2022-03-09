@@ -72,6 +72,7 @@ func createCurlCode(c curlCmd) (string, error) {
 	type cookiePart struct{ key, val string }
 	var cookieParts = []cookiePart{
 		{{range .Cookies}} { "{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
+		{{end}}{{range .QueryEscapedCookies}} { "{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`)" + `},
 		{{end}}
 	}
 	headers := map[string]string{
@@ -99,7 +100,7 @@ func createCurlCode(c curlCmd) (string, error) {
 	log.Printf("payload: %s", request.MustFormatString(payload))
 	`
 	var headers []renderedParam
-	var cookies []renderedParam
+	var cookies, queryEscapedCookies []renderedParam
 	var urlParams, quotedUrlParams, queryEscapedUrlParams []rawParam
 	const ()
 	for _, x := range c.uriParams {
@@ -146,7 +147,15 @@ func createCurlCode(c curlCmd) (string, error) {
 				} else {
 					return "", errors.Errorf("unexpected cookie parts: %+v", parts)
 				}
-				cookies = append(cookies, renderedParam{key, val})
+				if needsQueryEscape(val) {
+					unescaped, err := url.QueryUnescape(val)
+					if err != nil {
+						return "", errors.Errorf("url.QueryUnescape(%q): %v", val, err)
+					}
+					queryEscapedCookies = append(queryEscapedCookies, renderedParam{key, unescaped})
+				} else {
+					cookies = append(cookies, renderedParam{key, val})
+				}
 			}
 		} else {
 			headers = append(headers, renderedParam{h.key, h.val})
@@ -156,6 +165,7 @@ func createCurlCode(c curlCmd) (string, error) {
 		URI                   string
 		Headers               []renderedParam
 		Cookies               []renderedParam
+		QueryEscapedCookies   []renderedParam
 		URLParams             []rawParam
 		QuotedURLParams       []rawParam
 		QueryEscapedURLParams []rawParam
@@ -163,6 +173,7 @@ func createCurlCode(c curlCmd) (string, error) {
 		URI:                   c.uri,
 		Headers:               headers,
 		Cookies:               cookies,
+		QueryEscapedCookies:   queryEscapedCookies,
 		URLParams:             urlParams,
 		QuotedURLParams:       quotedUrlParams,
 		QueryEscapedURLParams: queryEscapedUrlParams,
