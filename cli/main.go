@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/spudtrooper/goutil/flags"
+	"github.com/spudtrooper/goutil/gitversion"
 	minimalcli "github.com/spudtrooper/minimalcli/app"
 )
 
@@ -20,6 +21,10 @@ var (
 func Main(ctx context.Context) error {
 	app := minimalcli.Make()
 	app.Init()
+
+	if gitversion.CheckVersionFlag() {
+		return nil
+	}
 
 	app.Register("CurlImport", func(context.Context) error {
 		if *curlRun && *curlOutfile == "" {
