@@ -18,33 +18,21 @@ type logger struct {
 	number         color.Color
 	normal         color.Color
 	str            color.Color
+	quotedString   color.Color
 	boolean        color.Color
 	uri            color.Color
 	specialStrings sets.StringSet
 	specialString  color.Color
 }
 
-func (l *logger) Number(c color.Color) {
-	l.number = c
-}
-func (l *logger) Normal(c color.Color) {
-	l.normal = c
-}
-func (l *logger) String(c color.Color) {
-	l.str = c
-}
-func (l *logger) Bool(c color.Color) {
-	l.boolean = c
-}
-func (l *logger) URI(c color.Color) {
-	l.uri = c
-}
-func (l *logger) SpecialStrings(ss ...string) {
-	l.specialStrings = sets.String(ss)
-}
-func (l *logger) SpecialString(c color.Color) {
-	l.specialString = c
-}
+func (l *logger) Number(c color.Color)        { l.number = c }
+func (l *logger) Normal(c color.Color)        { l.normal = c }
+func (l *logger) String(c color.Color)        { l.str = c }
+func (l *logger) QuotedString(c color.Color)  { l.quotedString = c }
+func (l *logger) Bool(c color.Color)          { l.boolean = c }
+func (l *logger) URI(c color.Color)           { l.uri = c }
+func (l *logger) SpecialStrings(ss ...string) { l.specialStrings = sets.String(ss) }
+func (l *logger) SpecialString(c color.Color) { l.specialString = c }
 
 type transform struct {
 	col    color.Color
@@ -100,7 +88,7 @@ func (l *logger) convert(tmpl string, args []interface{}) (string, []transform) 
 			if l.isSpecialString(args[i]) {
 				col = l.specialString
 			} else {
-				col = l.str
+				col = l.quotedString
 			}
 		case "s":
 			if l.isSpecialString(args[i]) {

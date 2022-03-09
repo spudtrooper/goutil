@@ -111,7 +111,7 @@ func TestPrintf(t *testing.T) {
 			wantTrans: []transform{
 				{
 					format: "%q",
-					col:    globalLogger.str,
+					col:    globalLogger.quotedString,
 				},
 			},
 		},

@@ -8,7 +8,8 @@ func init() {
 	globalLogger = &logger{
 		number:        *color.New(color.FgCyan),
 		normal:        *color.New(color.FgWhite),
-		str:           *color.New(color.FgRed),
+		str:           *color.New(color.FgMagenta),
+		quotedString:  *color.New(color.FgRed),
 		boolean:       *color.New(color.FgYellow),
 		uri:           *color.New(color.FgHiGreen).Add(color.Underline),
 		specialString: *color.New(color.FgHiRed),
