@@ -46,12 +46,20 @@ func CreateRoute(base string, ps ...Param) string {
 	if len(ps) == 0 {
 		return base
 	}
+	params := CreateParamsString(ps...)
+	return fmt.Sprintf("%s?%s", base, params)
+}
+
+func CreateParamsString(ps ...Param) string {
+	if len(ps) == 0 {
+		return ""
+	}
 	var ss []string
 	for _, p := range ps {
 		s := fmt.Sprintf("%s=%s", p.Key, url.QueryEscape(fmt.Sprintf("%v", p.Val)))
 		ss = append(ss, s)
 	}
-	return fmt.Sprintf("%s?%s", base, strings.Join(ss, "&"))
+	return strings.Join(ss, "&")
 }
 
 type Cookie struct {

@@ -67,9 +67,9 @@ func createCurlCode(c curlCmd) (string, error) {
 	}
 	t := `
 	uri := request.CreateRoute("{{.URI}}",
-		{{range .QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
-		{{end}}{{range .QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
-		{{end}}{{range .URLParams}}request.Param{"{{.Key}}", {{.Val}}},
+		{{range .URLParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
+		{{end}}{{range .URLParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .URLParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
 		{{end}}
 	)
 	type cookiePart struct{ key, val string }
@@ -96,7 +96,16 @@ func createCurlCode(c curlCmd) (string, error) {
 	if c := serializeCookie(); c != "" {
 		headers["cookie"] = c
 	}
+	{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParams) (not .DataParams.URLParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
+	{{ else }}
+	body := request.CreateParamsString(
+		{{range .DataParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
+		{{end}}{{range .DataParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .DataParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
+		{{end}}
+	)
+	{{ end }}
 
 	var payload interface{}
 	var res *request.Response
@@ -110,38 +119,48 @@ func createCurlCode(c curlCmd) (string, error) {
 	log.Printf("result: %+v", res)
 	log.Printf("payload: %s", request.MustFormatString(payload))
 	`
-	var headers []renderedParam
-	var cookies, queryEscapedCookies []renderedParam
-	var urlParams, quotedUrlParams, queryEscapedUrlParams []rawParam
-	const ()
-	for _, x := range c.uriParams {
-		v := x.val
+	type rawParams struct {
+		URLParams             []rawParam
+		QueryEscapedURLParams []rawParam
+		QuotedURLParams       []rawParam
+	}
+
+	fillRawParams := func(k, v string, p *rawParams) error {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
-			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeInt})
-			continue
+			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeInt})
+			return nil
 		}
 		// Parse bools after ints, since 1 parses to true, probably 0 to false.
 		if n, err := strconv.ParseBool(v); err == nil {
-			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeBool})
-			continue
+			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeBool})
+			return nil
 		}
 		if n, err := strconv.ParseFloat(v, 64); err == nil {
-			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeFloat})
-			continue
+			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeFloat})
+			return nil
 		}
 		if n, err := strconv.ParseComplex(v, 64); err == nil {
-			urlParams = append(urlParams, rawParam{Key: x.key, Val: n, Type: rawParamTypeComplex})
-			continue
+			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeComplex})
+			return nil
 		}
 		if needsQueryEscape(v) {
 			unescaped, err := url.QueryUnescape(v)
 			if err != nil {
-				return "", errors.Errorf("url.QueryUnescape(%q): %v", v, err)
+				return err
 			}
-			queryEscapedUrlParams = append(queryEscapedUrlParams, rawParam{Key: x.key, Val: unescaped, Type: rawParamTypeString})
-		} else {
-			quotedUrlParams = append(quotedUrlParams, rawParam{Key: x.key, Val: v, Type: rawParamTypeString})
+			p.QueryEscapedURLParams = append(p.QueryEscapedURLParams, rawParam{Key: k, Val: unescaped, Type: rawParamTypeString})
+			return nil
 		}
+		p.QuotedURLParams = append(p.QuotedURLParams, rawParam{Key: k, Val: v, Type: rawParamTypeString})
+		return nil
+	}
+
+	var headers []renderedParam
+	var cookies, queryEscapedCookies []renderedParam
+	var urlParams rawParams
+	const ()
+	for _, x := range c.uriParams {
+		fillRawParams(x.key, x.val, &urlParams)
 	}
 	for _, h := range c.headers {
 		if strings.ToLower(h.key) == "cookie" {
@@ -172,24 +191,46 @@ func createCurlCode(c curlCmd) (string, error) {
 			headers = append(headers, renderedParam{h.key, h.val})
 		}
 	}
+	isRawData := func(s string) bool {
+		if s == "" {
+			return true
+		}
+		if string(s[0]) == "{" {
+			return true
+		}
+		return false
+	}
+	var rawData string
+	var dataParams rawParams
+	if isRawData(c.data) {
+		rawData = c.data
+	} else {
+		for _, p := range strings.Split(c.data, "&") {
+			parts := strings.SplitN(p, "=", 2)
+			var k, v string
+			k = parts[0]
+			if len(parts) == 2 {
+				v = parts[1]
+			}
+			fillRawParams(k, v, &dataParams)
+		}
+	}
 	var data = struct {
-		URI                   string
-		Headers               []renderedParam
-		Cookies               []renderedParam
-		QueryEscapedCookies   []renderedParam
-		URLParams             []rawParam
-		QuotedURLParams       []rawParam
-		QueryEscapedURLParams []rawParam
-		Data                  string
+		URI                 string
+		Headers             []renderedParam
+		Cookies             []renderedParam
+		QueryEscapedCookies []renderedParam
+		URLParams           rawParams
+		Data                string
+		DataParams          rawParams
 	}{
-		URI:                   c.uri,
-		Headers:               headers,
-		Cookies:               cookies,
-		QueryEscapedCookies:   queryEscapedCookies,
-		URLParams:             urlParams,
-		QuotedURLParams:       quotedUrlParams,
-		QueryEscapedURLParams: queryEscapedUrlParams,
-		Data:                  c.data,
+		URI:                 c.uri,
+		Headers:             headers,
+		Cookies:             cookies,
+		QueryEscapedCookies: queryEscapedCookies,
+		URLParams:           urlParams,
+		Data:                rawData,
+		DataParams:          dataParams,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
