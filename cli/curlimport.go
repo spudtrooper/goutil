@@ -310,6 +310,7 @@ func curlImport(content, outfile string, run bool) error {
 		}
 		if m := dataRawRE.FindStringSubmatch(line); len(m) == 2 {
 			data := m[1]
+			data = strings.ReplaceAll(data, "\\\\n", "\\n")
 			c.data = data
 		}
 	}
