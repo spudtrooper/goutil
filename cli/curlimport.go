@@ -299,7 +299,9 @@ func curlImport(content, outfile string, run bool) error {
 				} else {
 					return errors.Errorf("unexpected parts: %+v", parts)
 				}
-				c.uriParams = append(c.uriParams, uriParam{key, val})
+				if key != "" {
+					c.uriParams = append(c.uriParams, uriParam{key, val})
+				}
 			}
 			c.opts = slice.Strings(strings.TrimSpace(opts), " ")
 			continue
