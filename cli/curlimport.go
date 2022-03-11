@@ -63,7 +63,7 @@ const (
 	rawParamTypeString  rawParamType = "string"
 )
 
-func fillRawParams(k, v string, p *rawParams) error {
+func fillRawParams(k, v string, p *rawParams, unescape bool) error {
 	if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeInt})
 		return nil
@@ -81,7 +81,7 @@ func fillRawParams(k, v string, p *rawParams) error {
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeComplex})
 		return nil
 	}
-	if needsQueryEscape(v) {
+	if unescape && needsQueryEscape(v) {
 		unescaped, err := url.QueryUnescape(v)
 		if err != nil {
 			return err
@@ -97,7 +97,7 @@ func needsQueryEscape(s string) bool {
 	return strings.Contains(s, "%2")
 }
 
-func createCurlCode(c curlCmd) (string, error) {
+func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	if len(c.opts) > 0 {
 		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.opts)
 	}
@@ -171,7 +171,7 @@ func createCurlCode(c curlCmd) (string, error) {
 	var urlParams rawParams
 
 	for _, x := range c.uriParams {
-		fillRawParams(x.key, x.val, &urlParams)
+		fillRawParams(x.key, x.val, &urlParams, unescape)
 	}
 
 	for _, h := range c.headers {
@@ -272,7 +272,7 @@ func createCurlCode(c curlCmd) (string, error) {
 			if len(parts) == 2 {
 				v = parts[1]
 			}
-			fillRawParams(k, v, &dataParams)
+			fillRawParams(k, v, &dataParams, unescape)
 		}
 	}
 
@@ -339,7 +339,7 @@ func renderTemplate(t string, name string, data interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func curlImport(content, outfile string, run bool) error {
+func curlImport(content, outfile string, run, createBodyStruct, unescape bool) error {
 	c := curlCmd{}
 
 	for _, line := range strings.Split(content, "\n") {
@@ -384,7 +384,7 @@ func curlImport(content, outfile string, run bool) error {
 		}
 	}
 
-	code, err := createCurlCode(c)
+	code, err := createCurlCode(c, unescape)
 	if err != nil {
 		return errors.Errorf("createCurlCode(%+v): %v", c, err)
 	}

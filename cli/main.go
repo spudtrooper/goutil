@@ -3,6 +3,7 @@ package cli
 
 import (
 	"context"
+	"flag"
 	"io/ioutil"
 
 	"github.com/go-errors/errors"
@@ -17,6 +18,7 @@ var (
 	curlOutfile    = flags.String("curl_outfile", "file to which we dump the output of importing a curl command")
 	curlRun        = flags.Bool("curl_run", "run generated file")
 	curlBodyStruct = flags.Bool("curl_body_struct", "create the body string by generating a struct, creating an instance of this struct, and serializing this object to a string. The is flaky, so we'll always generate the plain string, and you can just comment out the struct or turn this flag off.")
+	curlUnescape   = flag.Bool("curl_unescape", true, "unescape strings and place them in url.QueryEscape() calls, when possible")
 )
 
 func Main(ctx context.Context) error {
@@ -44,7 +46,7 @@ func Main(ctx context.Context) error {
 		if s == "" {
 			return errors.Errorf("required either --curl_file or --curl_string")
 		}
-		return curlImport(s, *curlOutfile, *curlRun)
+		return curlImport(s, *curlOutfile, *curlRun, *curlBodyStruct, *curlUnescape)
 	})
 
 	if err := app.Run(ctx); err != nil {
