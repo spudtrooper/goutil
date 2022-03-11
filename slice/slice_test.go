@@ -62,3 +62,35 @@ func TestStrings(t *testing.T) {
 		})
 	}
 }
+
+func TestReverse(t *testing.T) {
+	var tests = []struct {
+		name  string
+		input []string
+		want  []string
+	}{
+		{
+			name:  "empty",
+			input: []string{},
+			want:  []string{},
+		},
+		{
+			name:  "one",
+			input: []string{"1"},
+			want:  []string{"1"},
+		},
+		{
+			name:  "many",
+			input: []string{"1", "2", "3"},
+			want:  []string{"3", "2", "1"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Reverse(test.input)
+			if want, got := test.want, test.input; !reflect.DeepEqual(want, got) {
+				t.Errorf("Reverse(%v): want %v, got %v", test.input, want, got)
+			}
+		})
+	}
+}

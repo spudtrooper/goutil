@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	curlFile    = flags.String("curl_file", "file containing curl command")
-	curlString  = flags.String("curl_string", "string containing curl command")
-	curlOutfile = flags.String("curl_outfile", "file to which we dump the output of importing a curl command")
-	curlRun     = flags.Bool("curl_run", "run generated file")
+	curlFile       = flags.String("curl_file", "file containing curl command")
+	curlString     = flags.String("curl_string", "string containing curl command")
+	curlOutfile    = flags.String("curl_outfile", "file to which we dump the output of importing a curl command")
+	curlRun        = flags.Bool("curl_run", "run generated file")
+	curlBodyStruct = flags.Bool("curl_body_struct", "create the body string by generating a struct, creating an instance of this struct, and serializing this object to a string. The is flaky, so we'll always generate the plain string, and you can just comment out the struct or turn this flag off.")
 )
 
 func Main(ctx context.Context) error {

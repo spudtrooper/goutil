@@ -52,6 +52,9 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/rivo/duplo v0.0.0-20180323201418-c4ec823d58cd h1:if+/aco/wZitSP1n2F2S/eWjqajTLdWOSyZ9VdjL3JA=
 github.com/rivo/duplo v0.0.0-20180323201418-c4ec823d58cd/go.mod h1:gw8DEItjXFxacZzluOv7azm5G22Vvx/OBZb7Wqoqp9M=
 github.com/spudtrooper/goutil v0.1.46/go.mod h1:ze9pOdJ+H0tlBjiPC84xY7U0gjEveEn5i/qDX3iGbio=
+github.com/spudtrooper/goutil v0.1.67/go.mod h1:SPkYuCyWngjiYKurx7OJ+BpnZv5m23uD0PPVKzLEvRQ=
+github.com/spudtrooper/jsontogo v0.0.0-20220310212318-5dc9d8f01875 h1:bcY40Zc8JEDykUWxvPjxz6SzPiTUze7Xr90zkOXS9h0=
+github.com/spudtrooper/jsontogo v0.0.0-20220310212318-5dc9d8f01875/go.mod h1:nBM+kIGhOEdpfDDbS3y+6ga4tAqYVoiW/F5UiM3vWD0=
 github.com/spudtrooper/minimalcli v0.0.0-20220218140555-74daced67dea h1:3fWSUR2jYwrVMK1EXLNOMnGwfPYLJIVc0jeOqOkNY64=
 github.com/spudtrooper/minimalcli v0.0.0-20220218140555-74daced67dea/go.mod h1:WRwW9Arj7MSQBWfAalqJAJcY29RJ9mefQ5B91GJWFVc=
 github.com/tebeka/selenium v0.9.9 h1:cNziB+etNgyH/7KlNI7RMC1ua5aH1+5wUlFQyzeMh+w=
@@ -145,4 +148,6 @@ google.golang.org/grpc v1.21.1/go.mod h1:oYelfM1adQP15Ek0mdvEgi9Df8B9CZIaU1084ij
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
+rogchap.com/v8go v0.7.0 h1:kgjbiO4zE5itA962ze6Hqmbs4HgZbGzmueCXsZtremg=
+rogchap.com/v8go v0.7.0/go.mod h1:MxgP3pL2MW4dpme/72QRs8sgNMmM0pRc8DPhcuLWPAs=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=

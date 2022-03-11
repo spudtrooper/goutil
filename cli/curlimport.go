@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/check"
 	"github.com/spudtrooper/goutil/slice"
+	"github.com/spudtrooper/jsontogo/jsontogo"
 )
 
 var (
@@ -42,12 +43,17 @@ type renderedParam struct {
 	Key, Val string
 }
 
+type rawParamType string
 type rawParam struct {
 	Key  string
 	Val  interface{}
 	Type rawParamType
 }
-type rawParamType string
+type rawParams struct {
+	URLParams             []rawParam
+	QueryEscapedURLParams []rawParam
+	QuotedURLParams       []rawParam
+}
 
 const (
 	rawParamTypeBool    rawParamType = "bool"
@@ -56,6 +62,36 @@ const (
 	rawParamTypeComplex rawParamType = "complex"
 	rawParamTypeString  rawParamType = "string"
 )
+
+func fillRawParams(k, v string, p *rawParams) error {
+	if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeInt})
+		return nil
+	}
+	// Parse bools after ints, since 1 parses to true, probably 0 to false.
+	if n, err := strconv.ParseBool(v); err == nil {
+		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeBool})
+		return nil
+	}
+	if n, err := strconv.ParseFloat(v, 64); err == nil {
+		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeFloat})
+		return nil
+	}
+	if n, err := strconv.ParseComplex(v, 64); err == nil {
+		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeComplex})
+		return nil
+	}
+	if needsQueryEscape(v) {
+		unescaped, err := url.QueryUnescape(v)
+		if err != nil {
+			return err
+		}
+		p.QueryEscapedURLParams = append(p.QueryEscapedURLParams, rawParam{Key: k, Val: unescaped, Type: rawParamTypeString})
+		return nil
+	}
+	p.QuotedURLParams = append(p.QuotedURLParams, rawParam{Key: k, Val: v, Type: rawParamTypeString})
+	return nil
+}
 
 func needsQueryEscape(s string) bool {
 	return strings.Contains(s, "%2")
@@ -98,6 +134,16 @@ func createCurlCode(c curlCmd) (string, error) {
 	}
 	{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParams) (not .DataParams.URLParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
+	{{ if .SerializeBodyOject }}
+	{
+		{{.DataStruct}}
+		bodyObject := {{.BodyObject}}
+		j, err := request.JSONMarshal(bodyObject)
+		check.Err(err)
+		body = string(j)
+	}
+	{{ end }}
+
 	{{ else }}
 	body := request.CreateParamsString(
 		{{range .DataParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
@@ -119,49 +165,15 @@ func createCurlCode(c curlCmd) (string, error) {
 	log.Printf("result: %+v", res)
 	log.Printf("payload: %s", request.MustFormatString(payload))
 	`
-	type rawParams struct {
-		URLParams             []rawParam
-		QueryEscapedURLParams []rawParam
-		QuotedURLParams       []rawParam
-	}
-
-	fillRawParams := func(k, v string, p *rawParams) error {
-		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
-			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeInt})
-			return nil
-		}
-		// Parse bools after ints, since 1 parses to true, probably 0 to false.
-		if n, err := strconv.ParseBool(v); err == nil {
-			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeBool})
-			return nil
-		}
-		if n, err := strconv.ParseFloat(v, 64); err == nil {
-			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeFloat})
-			return nil
-		}
-		if n, err := strconv.ParseComplex(v, 64); err == nil {
-			p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeComplex})
-			return nil
-		}
-		if needsQueryEscape(v) {
-			unescaped, err := url.QueryUnescape(v)
-			if err != nil {
-				return err
-			}
-			p.QueryEscapedURLParams = append(p.QueryEscapedURLParams, rawParam{Key: k, Val: unescaped, Type: rawParamTypeString})
-			return nil
-		}
-		p.QuotedURLParams = append(p.QuotedURLParams, rawParam{Key: k, Val: v, Type: rawParamTypeString})
-		return nil
-	}
 
 	var headers []renderedParam
 	var cookies, queryEscapedCookies []renderedParam
 	var urlParams rawParams
-	const ()
+
 	for _, x := range c.uriParams {
 		fillRawParams(x.key, x.val, &urlParams)
 	}
+
 	for _, h := range c.headers {
 		if strings.ToLower(h.key) == "cookie" {
 			for _, c := range strings.Split(h.val, "; ") {
@@ -191,6 +203,7 @@ func createCurlCode(c curlCmd) (string, error) {
 			headers = append(headers, renderedParam{h.key, h.val})
 		}
 	}
+
 	isRawData := func(s string) bool {
 		if s == "" {
 			return true
@@ -200,21 +213,69 @@ func createCurlCode(c curlCmd) (string, error) {
 		}
 		return false
 	}
+
+	// Types could be laid out with declarations following uses. Since we're
+	// adding this to funftion scope, we need to make sure declarations come
+	// first.
+	//
+	// e.g.
+	//
+	// type BodyT struct {
+	// 	 Variables Variables `json:"variables"`
+	// }
+	// type Variables struct {
+	// 	 ID string `json:"id"`
+	// }
+	reverseTypeOrder := func(s string) string {
+		types := []string{""}
+		for _, line := range strings.Split(s, "\n") {
+			types[len(types)-1] += line + "\n"
+			if line == "}" {
+				types = append(types, "")
+			}
+		}
+		slice.Reverse(types)
+		return strings.Join(types, "")
+	}
+
+	createBodyObject := func(dataStruct, data string) string {
+		replace := func(word string) string {
+			var parts []string
+			for _, part := range strings.Split(word, "_") {
+				parts = append(parts, strings.Title(part))
+			}
+			res := strings.Join(parts, "")
+			res = strings.ReplaceAll(res, `"`, "")
+			return res
+		}
+		keyRE := regexp.MustCompile(`"[^"]+":`)
+		return keyRE.ReplaceAllStringFunc(data, replace)
+	}
+
 	var rawData string
 	var dataParams rawParams
+	var dataStruct string
+	var bodyObject string
+
 	if isRawData(c.data) {
 		rawData = c.data
+		ds, err := jsontogo.JSONToGo(c.data, "Body")
+		if err != nil {
+			return "", errors.Errorf("converting %q to a struct: %v", c.data, err)
+		}
+		dataStruct = reverseTypeOrder(ds)
+		bodyObject = "Body" + createBodyObject(dataStruct, c.data)
 	} else {
 		for _, p := range strings.Split(c.data, "&") {
 			parts := strings.SplitN(p, "=", 2)
-			var k, v string
-			k = parts[0]
+			k, v := parts[0], ""
 			if len(parts) == 2 {
 				v = parts[1]
 			}
 			fillRawParams(k, v, &dataParams)
 		}
 	}
+
 	var data = struct {
 		URI                 string
 		Headers             []renderedParam
@@ -222,7 +283,10 @@ func createCurlCode(c curlCmd) (string, error) {
 		QueryEscapedCookies []renderedParam
 		URLParams           rawParams
 		Data                string
+		DataStruct          string
 		DataParams          rawParams
+		BodyObject          string
+		SerializeBodyOject  bool
 	}{
 		URI:                 c.uri,
 		Headers:             headers,
@@ -230,11 +294,14 @@ func createCurlCode(c curlCmd) (string, error) {
 		QueryEscapedCookies: queryEscapedCookies,
 		URLParams:           urlParams,
 		Data:                rawData,
+		DataStruct:          dataStruct,
 		DataParams:          dataParams,
+		BodyObject:          bodyObject,
+		SerializeBodyOject:  *curlBodyStruct,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
-		return "", err
+		return "", errors.Errorf("rendering template: %v", err)
 	}
 	return res, nil
 }
