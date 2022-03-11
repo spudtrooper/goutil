@@ -102,14 +102,19 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.opts)
 	}
 	t := `
-	uri := request.CreateRoute("{{.URI}}",
+	// Options
+	printData := true
+	printCookies := true
+	printPayload := true
+
+	// Data
+	uri := request.MakeURL("{{.URI}}",
 		{{range .URLParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
 		{{end}}{{range .URLParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
 		{{end}}{{range .URLParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
 		{{end}}
 	)
-	type cookiePart struct{ key, val string }
-	var cookieParts = []cookiePart{
+	cookie := [][2]string{
 		{{range .Cookies}} { "{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
 		{{end}}{{range .QueryEscapedCookies}} { "{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`)" + `},
 		{{end}}
@@ -117,22 +122,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	headers := map[string]string{
 		{{range .Headers}}"{{.Key}}": ` + "`" + `{{.Val}}` + "`" + `,
 		{{end}}
-	}
-
-	serializeCookie := func() string {
-		if len(cookieParts) > 0 {
-			var cs []string
-			for _, c := range cookieParts {
-				cs=append(cs, fmt.Sprintf("%s=%s", c.key, c.val))
-			}
-			return strings.Join(cs, "; ")
-		}		
-		return ""
-	}
-	if c := serializeCookie(); c != "" {
-		headers["cookie"] = c
-	}
-	{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParams) (not .DataParams.URLParams) }}
+	}{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParams) (not .DataParams.URLParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
 	{{ if .SerializeBodyOject }}
 	{
@@ -145,7 +135,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	{{ end }}
 
 	{{ else }}
-	body := request.CreateParamsString(
+	body := request.MakeRequestParams(
 		{{range .DataParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
 		{{end}}{{range .DataParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
 		{{end}}{{range .DataParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
@@ -153,6 +143,17 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	)
 	{{ end }}
 
+	// Make the request
+	if len(cookie) > 0 {
+		var cs []string
+		for _, c := range cookie {
+			cs=append(cs, fmt.Sprintf("%s=%s", c[0], c[1]))
+		}
+		if c:= strings.Join(cs, "; "); c != "" {
+			headers["cookie"] = c
+		}
+	}
+	
 	var payload interface{}
 	var res *request.Response
 	var err error
@@ -161,9 +162,16 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	} else {
 		res, err = request.Post(uri, &payload, strings.NewReader(body), request.RequestExtraHeaders(headers))
 	}
+	if printData {
+		log.Printf("data: %s", string(res.Data))
+	}
+	if printCookies {
+		log.Printf("cookies: %v", res.Cookies)
+	}
+	if printPayload {
+		log.Printf("payload: %s", request.MustFormatString(payload))
+	}
 	check.Err(err)
-	log.Printf("result: %+v", res)
-	log.Printf("payload: %s", request.MustFormatString(payload))
 	`
 
 	var headers []renderedParam

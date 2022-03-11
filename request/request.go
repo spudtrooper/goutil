@@ -42,15 +42,24 @@ func (p Params) AddStringIfNotEmpty(key, val string) Params {
 	return p
 }
 
+// Don't use, use MakeURL, this has a stupid name.
 func CreateRoute(base string, ps ...Param) string {
 	if len(ps) == 0 {
 		return base
 	}
-	params := CreateParamsString(ps...)
+	params := MakeRequestParams(ps...)
 	return fmt.Sprintf("%s?%s", base, params)
 }
 
-func CreateParamsString(ps ...Param) string {
+func MakeURL(base string, ps ...Param) string {
+	if len(ps) == 0 {
+		return base
+	}
+	params := MakeRequestParams(ps...)
+	return fmt.Sprintf("%s?%s", base, params)
+}
+
+func MakeRequestParams(ps ...Param) string {
 	if len(ps) == 0 {
 		return ""
 	}
