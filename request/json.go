@@ -48,3 +48,9 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	}
 	return buffer.Bytes(), nil
 }
+
+func MustJSONMarshal(t interface{}) []byte {
+	res, err := JSONMarshal(t)
+	check.Err(err)
+	return res
+}
