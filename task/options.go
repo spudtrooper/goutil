@@ -2,7 +2,7 @@ package task
 
 import "github.com/fatih/color"
 
-//go:generate genopts --outfile=options.go "printDone" "color:*color.Color"
+//go:generate genopts --outfile=task/options.go "printDone" "color:*color.Color"
 
 type Option func(*optionImpl)
 
@@ -16,10 +16,20 @@ func PrintDone(printDone bool) Option {
 		opts.printDone = printDone
 	}
 }
+func PrintDoneFlag(printDone *bool) Option {
+	return func(opts *optionImpl) {
+		opts.printDone = *printDone
+	}
+}
 
 func Color(color *color.Color) Option {
 	return func(opts *optionImpl) {
 		opts.color = color
+	}
+}
+func ColorFlag(color **color.Color) Option {
+	return func(opts *optionImpl) {
+		opts.color = *color
 	}
 }
 

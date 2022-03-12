@@ -1,6 +1,6 @@
 package html
 
-//go:generate genopts --opt_type=RenderOption --prefix=Render --outfile=renderoptions.go "noFormat:bool"
+//go:generate genopts --prefix=Render --outfile=html/renderoptions.go "noFormat:bool"
 
 type RenderOption func(*renderOptionImpl)
 
@@ -11,6 +11,11 @@ type RenderOptions interface {
 func RenderNoFormat(noFormat bool) RenderOption {
 	return func(opts *renderOptionImpl) {
 		opts.noFormat = noFormat
+	}
+}
+func RenderNoFormatFlag(noFormat *bool) RenderOption {
+	return func(opts *renderOptionImpl) {
+		opts.noFormat = *noFormat
 	}
 }
 

@@ -1,6 +1,6 @@
 package io
 
-//go:generate genopts --opt_type=StringsFromFileOption --prefix=StringsFromFile --outfile=stringsfromfileoptions.go "skipEmpty:bool" "commentStart:string"
+//go:generate genopts --prefix=StringsFromFile --outfile=io/stringsfromfileoptions.go "skipEmpty:bool" "commentStart:string"
 
 type StringsFromFileOption func(*stringsFromFileOptionImpl)
 
@@ -14,10 +14,20 @@ func StringsFromFileSkipEmpty(skipEmpty bool) StringsFromFileOption {
 		opts.skipEmpty = skipEmpty
 	}
 }
+func StringsFromFileSkipEmptyFlag(skipEmpty *bool) StringsFromFileOption {
+	return func(opts *stringsFromFileOptionImpl) {
+		opts.skipEmpty = *skipEmpty
+	}
+}
 
 func StringsFromFileCommentStart(commentStart string) StringsFromFileOption {
 	return func(opts *stringsFromFileOptionImpl) {
 		opts.commentStart = commentStart
+	}
+}
+func StringsFromFileCommentStartFlag(commentStart *string) StringsFromFileOption {
+	return func(opts *stringsFromFileOptionImpl) {
+		opts.commentStart = *commentStart
 	}
 }
 

@@ -128,9 +128,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	{
 		{{.DataStruct}}
 		bodyObject := {{.BodyObject}}
-		j, err := request.JSONMarshal(bodyObject)
-		check.Err(err)
-		body = string(j)
+		body = string(request.MustJSONMarshal(bodyObject))
 	}
 	{{ end }}
 

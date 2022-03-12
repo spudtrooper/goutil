@@ -2,7 +2,7 @@ package request
 
 import "time"
 
-//go:generate genopts --opt_type=RequestOption --prefix=Request --outfile=requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration"
+//go:generate genopts --prefix=Request --outfile=request/requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration"
 
 type RequestOption func(*requestOptionImpl)
 
@@ -19,10 +19,20 @@ func RequestExtraHeaders(extraHeaders map[string]string) RequestOption {
 		opts.extraHeaders = extraHeaders
 	}
 }
+func RequestExtraHeadersFlag(extraHeaders *map[string]string) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.extraHeaders = *extraHeaders
+	}
+}
 
 func RequestHost(host string) RequestOption {
 	return func(opts *requestOptionImpl) {
 		opts.host = host
+	}
+}
+func RequestHostFlag(host *string) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.host = *host
 	}
 }
 
@@ -31,16 +41,31 @@ func RequestCustomPayload(customPayload interface{}) RequestOption {
 		opts.customPayload = customPayload
 	}
 }
+func RequestCustomPayloadFlag(customPayload *interface{}) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.customPayload = *customPayload
+	}
+}
 
 func RequestProxyURL(proxyURL string) RequestOption {
 	return func(opts *requestOptionImpl) {
 		opts.proxyURL = proxyURL
 	}
 }
+func RequestProxyURLFlag(proxyURL *string) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.proxyURL = *proxyURL
+	}
+}
 
 func RequestTimeout(timeout time.Duration) RequestOption {
 	return func(opts *requestOptionImpl) {
 		opts.timeout = timeout
+	}
+}
+func RequestTimeoutFlag(timeout *time.Duration) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.timeout = *timeout
 	}
 }
 
