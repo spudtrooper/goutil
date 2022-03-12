@@ -3,7 +3,10 @@ package hist
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
+
+	"github.com/thomaso-mirodin/intmath/intgr"
 )
 
 type Histogram interface {
@@ -24,6 +27,18 @@ func MakeHistogram(mOpts ...MakeHistogramOption) Histogram {
 
 func Sync(h Histogram) Histogram {
 	return &synced{h: h}
+}
+
+func HistString(h Histogram) string {
+	var max int
+	for _, p := range h.Pairs() {
+		max = intgr.Max(max, len(p.Key))
+	}
+	var out []string
+	for _, p := range h.Pairs() {
+		out = append(out, fmt.Sprintf("%"+fmt.Sprintf("%d", max)+"s: %d", p.Key, p.Value))
+	}
+	return strings.Join(out, "\n")
 }
 
 type base struct{ hist map[string]int }
