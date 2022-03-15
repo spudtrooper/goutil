@@ -5,8 +5,8 @@ import (
 	"sync"
 )
 
-func ExecAndDrain(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error)) {
-	res, errs := Exec(collection, threads, fn)
+func ExecAndDrain(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error), eOpts ...ExecOption) {
+	res, errs := Exec(collection, threads, fn, eOpts...)
 	EmptyDrain(res, errs)
 }
 
@@ -22,7 +22,9 @@ func DoTimes(threads int, fn func()) {
 	wg.Wait()
 }
 
-func Exec(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error)) (chan interface{}, chan error) {
+func Exec(collection chan interface{}, threads int, fn func(interface{}) (interface{}, error), eOpts ...ExecOption) (chan interface{}, chan error) {
+	opts := MakeExecOptions(eOpts...)
+
 	results := make(chan interface{})
 	errors := make(chan error)
 	go func() {
@@ -35,6 +37,9 @@ func Exec(collection chan interface{}, threads int, fn func(interface{}) (interf
 					res, err := fn(x)
 					if err != nil {
 						errors <- err
+						if opts.ExitOnError() {
+							break
+						}
 					} else {
 						results <- res
 					}
