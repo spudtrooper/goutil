@@ -1,6 +1,6 @@
 package slice
 
-//go:generate genopts --prefix=Strings --outfile=slice/stringsoptions.go "trimSpace"
+//go:generate genopts --prefix=Strings --outfile=stringsoptions.go "trimSpace"
 
 type StringsOption func(*stringsOptionImpl)
 

@@ -1,6 +1,6 @@
 package parallel
 
-//go:generate genopts --prefix=Exec --outfile=parallel/execoptions.go "exitOnError:bool"
+//go:generate genopts --prefix=Exec --outfile=execoptions.go "exitOnError:bool"
 
 type ExecOption func(*execOptionImpl)
 

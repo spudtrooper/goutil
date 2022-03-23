@@ -1,6 +1,6 @@
 package log
 
-//go:generate genopts --prefix=MakeLog --outfile=log/makelogoptions.go "color"
+//go:generate genopts --prefix=MakeLog --outfile=makelogoptions.go "color"
 
 type MakeLogOption func(*makeLogOptionImpl)
 

@@ -2,7 +2,7 @@ package request
 
 import "time"
 
-//go:generate genopts --prefix=Request --outfile=request/requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration"
+//go:generate genopts --prefix=Request --outfile=requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration"
 
 type RequestOption func(*requestOptionImpl)
 

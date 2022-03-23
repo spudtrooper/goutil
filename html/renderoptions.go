@@ -1,6 +1,6 @@
 package html
 
-//go:generate genopts --prefix=Render --outfile=html/renderoptions.go "noFormat:bool"
+//go:generate genopts --prefix=Render --outfile=renderoptions.go "noFormat:bool"
 
 type RenderOption func(*renderOptionImpl)
 

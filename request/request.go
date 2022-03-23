@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,9 +19,15 @@ import (
 )
 
 var (
-	requestStats = flags.Bool("request_stats", "print verbose debugging of request timing")
-	requestDebug = flags.Bool("request_debug", "print verbose debugging of requests")
+	requestStats     = flags.Bool("request_stats", "print verbose debugging of request timing")
+	requestDebug     = flags.Bool("request_debug", "print verbose debugging of requests")
+	readFromURLCache = flags.Bool("request_read_from_url_cache", "read from the url cache")
+	writeToURLCache  = flags.Bool("request_write_to_url_cache", "write to the url cache after every request")
+	urlCachePort     = flags.Int("request_url_cache_port", "port for the url cache")
+	urlCacheDBName   = flags.String("request_url_cache_db_name", "DB name for the url cache")
 )
+
+var globalURLCache *urlCache
 
 type Param struct {
 	Key string
@@ -100,6 +107,18 @@ func Delete(url string, result interface{}, rOpts ...RequestOption) (*Response, 
 }
 
 func request(method, uri string, result interface{}, body io.Reader, rOpts ...RequestOption) (*Response, error) {
+	if *readFromURLCache {
+		resp, err := mustGetGlobalURLCache().FindRequest(context.Background(), uri)
+		if err != nil {
+			return nil, err
+		}
+		if resp != nil {
+			log.Printf("responding with cached response")
+			return resp, nil
+		}
+		log.Printf("no cached response")
+	}
+
 	opts := MakeRequestOptions(rOpts...)
 
 	timeout := or.Duration(opts.Timeout(), 10*time.Second)
@@ -208,10 +227,37 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 		}
 	}
 
-	res := &Response{
+	res := Response{
 		Resp:    resp,
 		Data:    data,
 		Cookies: cookies,
 	}
-	return res, nil
+
+	if *writeToURLCache {
+		if err := mustGetGlobalURLCache().SaveRequest(context.Background(), uri, res); err != nil {
+			return nil, err
+		}
+	}
+
+	return &res, nil
+}
+
+func mustGetGlobalURLCache() *urlCache {
+	if globalURLCache == nil {
+		log.Printf("connecting to global url cache")
+		var opts []ConnectToURLCacheOption
+		if *urlCachePort != 0 {
+			opts = append(opts, ConnectToURLCachePort(*urlCachePort))
+		}
+		if *urlCacheDBName != "" {
+			opts = append(opts, ConnectToURLCacheDbName(*urlCacheDBName))
+		}
+		cache, err := ConnectToURLCache(context.Background(), opts...)
+		if err != nil {
+			panic(err.Error())
+		}
+		globalURLCache = cache
+		log.Printf("globalURLCache %+v", globalURLCache)
+	}
+	return globalURLCache
 }
