@@ -54,6 +54,15 @@ func String(lst []string) StringSet {
 	return res
 }
 
+// Keys returns the set of keys of `set`
+func Keys(set StringSet) []string {
+	res := []string{}
+	for s := range set {
+		res = append(res, s)
+	}
+	return res
+}
+
 // Float32 creates a set from the list
 func Float32(lst []float32) Float32Set {
 	res := map[float32]bool{}

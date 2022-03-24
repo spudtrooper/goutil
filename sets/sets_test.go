@@ -2,6 +2,7 @@ package sets
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -276,6 +277,45 @@ func TestString(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if got := String(test.input); !reflect.DeepEqual(test.want, got) {
 				t.Errorf("String(%v): want %v, got %v", test.input, test.want, got)
+			}
+		})
+	}
+}
+
+func TestKeys(t *testing.T) {
+	var tests = []struct {
+		name  string
+		input StringSet
+		want  []string
+	}{
+		{
+			name:  "empty",
+			input: String([]string{}),
+			want:  []string{},
+		},
+		{
+			name:  "one",
+			input: String([]string{"1"}),
+			want:  []string{"1"},
+		},
+		{
+			name:  "uniques",
+			input: String([]string{"1", "2", "3"}),
+			want:  []string{"1", "2", "3"},
+		},
+		{
+			name:  "dups",
+			input: String([]string{"1", "2", "3", "1", "2", "3", "1", "2", "3"}),
+			want:  []string{"1", "2", "3"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, want := Keys(test.input), test.want
+			sort.Strings(got)
+			sort.Strings(want)
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("Keys(%v): want %v, got %v", test.input, want, got)
 			}
 		})
 	}
