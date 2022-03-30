@@ -1,5 +1,7 @@
 package sets
 
+import "sort"
+
 // IntSet is a set of int
 type IntSet map[int]bool
 
@@ -61,6 +63,13 @@ func Keys(set StringSet) []string {
 		res = append(res, s)
 	}
 	return res
+}
+
+// SortedKeys returns the sorted set of keys of `set`
+func SortedKeys(set StringSet) []string {
+	keys := Keys(set)
+	sort.Strings(keys)
+	return keys
 }
 
 // Float32 creates a set from the list

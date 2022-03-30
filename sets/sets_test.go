@@ -320,3 +320,40 @@ func TestKeys(t *testing.T) {
 		})
 	}
 }
+
+func TestSortedKeys(t *testing.T) {
+	var tests = []struct {
+		name  string
+		input StringSet
+		want  []string
+	}{
+		{
+			name:  "empty",
+			input: String([]string{}),
+			want:  []string{},
+		},
+		{
+			name:  "one",
+			input: String([]string{"1"}),
+			want:  []string{"1"},
+		},
+		{
+			name:  "uniques",
+			input: String([]string{"1", "2", "3"}),
+			want:  []string{"1", "2", "3"},
+		},
+		{
+			name:  "dups",
+			input: String([]string{"1", "2", "3", "1", "2", "3", "1", "2", "3"}),
+			want:  []string{"1", "2", "3"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, want := SortedKeys(test.input), test.want
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("SortedKeys(%v): want %v, got %v", test.input, want, got)
+			}
+		})
+	}
+}
