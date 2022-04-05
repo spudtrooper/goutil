@@ -1,6 +1,10 @@
 package slice
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/spudtrooper/goutil/sets"
+)
 
 func Strings(input, sep string, sOpts ...StringsOption) []string {
 	opts := MakeStringsOptions(sOpts...)
@@ -13,6 +17,18 @@ func Strings(input, sep string, sOpts ...StringsOption) []string {
 			s = strings.TrimSpace(s)
 		}
 		res = append(res, s)
+	}
+	return res
+}
+
+// StringDiff returns an array with all elements in `a` not in `b`.
+func StringDiff(a, b []string) []string {
+	res := []string{}
+	bSet := sets.String(b)
+	for _, x := range a {
+		if !bSet[x] {
+			res = append(res, x)
+		}
 	}
 	return res
 }
