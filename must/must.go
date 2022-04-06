@@ -39,3 +39,7 @@ func ReadLines(input string) []string {
 	chk(err)
 	return lines
 }
+
+func WriteFile(f string, b []byte) {
+	chk(io.WriteFile(f, b))
+}
