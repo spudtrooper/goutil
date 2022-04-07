@@ -102,6 +102,11 @@ func Patch(url string, result interface{}, body io.Reader, rOpts ...RequestOptio
 	return request("PATCH", url, result, body, rOpts...)
 }
 
+// TODO: Move body to a RequestOption
+func Put(url string, result interface{}, body io.Reader, rOpts ...RequestOption) (*Response, error) {
+	return request("PUT", url, result, body, rOpts...)
+}
+
 func Delete(url string, result interface{}, rOpts ...RequestOption) (*Response, error) {
 	return request("DELETE", url, result, nil, rOpts...)
 }

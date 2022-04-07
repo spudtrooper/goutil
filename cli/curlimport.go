@@ -27,6 +27,8 @@ var (
 	headerRE = regexp.MustCompile(`\s*-H '([^:]+): ([^']+)'`)
 	//   --data-raw '{...}' \
 	dataRawRE = regexp.MustCompile(`\s*--data-raw '([^']+)'`)
+	//  -X 'PUT' \
+	methodRE = regexp.MustCompile(`\s*-X '([^']+)'`)
 )
 
 type uriParam struct{ key, val string }
@@ -37,6 +39,7 @@ type curlCmd struct {
 	uriParams []uriParam
 	headers   []header
 	data      string
+	method    string
 }
 
 type renderedParam struct {
@@ -155,11 +158,21 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	var payload interface{}
 	var res *request.Response
 	var err error
-	if body == "" {
+	{{ if eq .Method "GET" }}
 		res, err = request.Get(uri, &payload, request.RequestExtraHeaders(headers))
-	} else {
+	{{ else if eq .Method "POST" }}
 		res, err = request.Post(uri, &payload, strings.NewReader(body), request.RequestExtraHeaders(headers))
-	}
+  {{ else if eq .Method "DELETE" }}
+		res, err = request.Delete(uri, &payload, request.RequestExtraHeaders(headers))
+	{{ else if eq .Method "PUT" }}
+		res, err = request.Put(uri, &payload, strings.NewReader(body), request.RequestExtraHeaders(headers))
+	{{ else }}
+		if body == "" {
+			res, err = request.Get(uri, &payload, request.RequestExtraHeaders(headers))
+		} else {
+			res, err = request.Post(uri, &payload, strings.NewReader(body), request.RequestExtraHeaders(headers))
+		}
+	{{ end }}
 	if printData {
 		log.Printf("data: %s", string(res.Data))
 	}
@@ -293,6 +306,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		DataParams          rawParams
 		BodyObject          string
 		SerializeBodyOject  bool
+		Method              string
 	}{
 		URI:                 c.uri,
 		Headers:             headers,
@@ -304,6 +318,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		DataParams:          dataParams,
 		BodyObject:          bodyObject,
 		SerializeBodyOject:  *curlBodyStruct,
+		Method:              c.method,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
@@ -345,8 +360,8 @@ func renderTemplate(t string, name string, data interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func curlImport(content, outfile string, run, createBodyStruct, unescape bool) error {
-	c := curlCmd{}
+func parseCurlCmd(content string) (*curlCmd, error) {
+	c := &curlCmd{}
 
 	for _, line := range strings.Split(content, "\n") {
 		if c.uri == "" {
@@ -357,7 +372,7 @@ func curlImport(content, outfile string, run, createBodyStruct, unescape bool) e
 			c.uri = rawUri
 			u, err := url.Parse(uri)
 			if err != nil {
-				return errors.Errorf("url.Parse(%q): %v", uri, err)
+				return nil, errors.Errorf("url.Parse(%q): %v", uri, err)
 			}
 			for _, p := range strings.Split(u.RawQuery, "&") {
 				parts := strings.SplitN(p, "=", 2)
@@ -370,13 +385,15 @@ func curlImport(content, outfile string, run, createBodyStruct, unescape bool) e
 				} else if len(parts) == 2 {
 					key, val = parts[0], parts[1]
 				} else {
-					return errors.Errorf("unexpected parts: %+v", parts)
+					return nil, errors.Errorf("unexpected parts: %+v", parts)
 				}
 				if key != "" {
 					c.uriParams = append(c.uriParams, uriParam{key, val})
 				}
 			}
-			c.opts = slice.Strings(strings.TrimSpace(opts), " ")
+			if arr := slice.Strings(strings.TrimSpace(opts), " "); len(arr) > 0 {
+				c.opts = arr
+			}
 			continue
 		}
 		if m := headerRE.FindStringSubmatch(line); len(m) == 3 {
@@ -388,9 +405,30 @@ func curlImport(content, outfile string, run, createBodyStruct, unescape bool) e
 			data = strings.ReplaceAll(data, "\\\\n", "\\n")
 			c.data = data
 		}
+		if m := methodRE.FindStringSubmatch(line); len(m) == 2 {
+			method := m[1]
+			c.method = method
+		}
 	}
 
-	code, err := createCurlCode(c, unescape)
+	if c.method == "" {
+		if c.data == "" {
+			c.method = "GET"
+		} else {
+			c.method = "POST"
+		}
+	}
+
+	return c, nil
+}
+
+func curlImport(content, outfile string, run, createBodyStruct, unescape bool) error {
+	c, err := parseCurlCmd(content)
+	if err != nil {
+		return errors.Errorf("parseCurlCmd: %v", err)
+	}
+
+	code, err := createCurlCode(*c, unescape)
 	if err != nil {
 		return errors.Errorf("createCurlCode(%+v): %v", c, err)
 	}
