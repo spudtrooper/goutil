@@ -266,3 +266,11 @@ func mustGetGlobalURLCache() *urlCache {
 	}
 	return globalURLCache
 }
+
+func CreateCookie(cookie [][2]string) string {
+	var cs []string
+	for _, c := range cookie {
+		cs = append(cs, fmt.Sprintf("%s=%s", c[0], c[1]))
+	}
+	return strings.Join(cs, "; ")
+}

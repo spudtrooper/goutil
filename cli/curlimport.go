@@ -216,6 +216,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	headers := map[string]string{
 		{{range .Headers}}"{{.Key}}": ` + "`" + `{{.Val}}` + "`" + `,
 		{{end}}
+		"cookie": request.CreateCookie(cookie),
 	}{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParamsVal) (not .DataParams.QueryEscapedURLParamsKey) (not .DataParams.QueryEscapedURLParamsBoth) (not .DataParams.URLParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
 	{{ if .SerializeBodyOject }}
@@ -238,16 +239,6 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	{{ end }}
 
 	// Make the request
-	if len(cookie) > 0 {
-		var cs []string
-		for _, c := range cookie {
-			cs=append(cs, fmt.Sprintf("%s=%s", c[0], c[1]))
-		}
-		if c:= strings.Join(cs, "; "); c != "" {
-			headers["cookie"] = c
-		}
-	}
-	
 	var payload interface{}
 	var res *request.Response
 	var err error
