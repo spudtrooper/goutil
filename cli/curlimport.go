@@ -3,6 +3,7 @@ package cli
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -21,6 +22,11 @@ import (
 )
 
 var (
+	// Flags
+	debug = flag.Bool("curl_import_debug", false, "Verbose logging")
+
+	// Other
+
 	// curl 'https://api.seatgeek.com/2/list?is_group=false&lat=40.7662&lon=-73.9862&tag=trending_events_list
 	curlCmdRE = regexp.MustCompile(`^curl([^']*)'([^']+)'`)
 	//  -H 'origin: https://seatgeek.com' \
@@ -53,9 +59,11 @@ type rawParam struct {
 	Type rawParamType
 }
 type rawParams struct {
-	URLParams             []rawParam
-	QueryEscapedURLParams []rawParam
-	QuotedURLParams       []rawParam
+	URLParams                 []rawParam
+	QueryEscapedURLParamsVal  []rawParam
+	QueryEscapedURLParamsKey  []rawParam
+	QueryEscapedURLParamsBoth []rawParam
+	QuotedURLParams           []rawParam
 }
 
 const (
@@ -66,31 +74,85 @@ const (
 	rawParamTypeString  rawParamType = "string"
 )
 
-func fillRawParams(k, v string, p *rawParams, unescape bool) error {
+func addToRawParams(k, v string, p *rawParams, unescape bool) error {
 	if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+		if needsQueryEscape(k) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsKey = append(p.QueryEscapedURLParamsKey, rawParam{Key: unescapedKey, Val: v, Type: rawParamTypeInt})
+			return nil
+		}
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeInt})
 		return nil
 	}
 	// Parse bools after ints, since 1 parses to true, probably 0 to false.
 	if n, err := strconv.ParseBool(v); err == nil {
+		if needsQueryEscape(k) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsKey = append(p.QueryEscapedURLParamsKey, rawParam{Key: unescapedKey, Val: v, Type: rawParamTypeBool})
+			return nil
+		}
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeBool})
 		return nil
 	}
 	if n, err := strconv.ParseFloat(v, 64); err == nil {
+		if needsQueryEscape(k) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsKey = append(p.QueryEscapedURLParamsKey, rawParam{Key: unescapedKey, Val: v, Type: rawParamTypeFloat})
+			return nil
+		}
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeFloat})
 		return nil
 	}
 	if n, err := strconv.ParseComplex(v, 64); err == nil {
+		if needsQueryEscape(k) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsKey = append(p.QueryEscapedURLParamsKey, rawParam{Key: unescapedKey, Val: v, Type: rawParamTypeComplex})
+			return nil
+		}
 		p.URLParams = append(p.URLParams, rawParam{Key: k, Val: n, Type: rawParamTypeComplex})
 		return nil
 	}
-	if unescape && needsQueryEscape(v) {
-		unescaped, err := url.QueryUnescape(v)
-		if err != nil {
-			return err
+	if unescape {
+		if needsQueryEscape(k) && needsQueryEscape(v) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			unescapedVal, err := url.QueryUnescape(v)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsBoth = append(p.QueryEscapedURLParamsBoth, rawParam{Key: unescapedKey, Val: unescapedVal, Type: rawParamTypeString})
+			return nil
 		}
-		p.QueryEscapedURLParams = append(p.QueryEscapedURLParams, rawParam{Key: k, Val: unescaped, Type: rawParamTypeString})
-		return nil
+		if needsQueryEscape(v) {
+			unescapedVal, err := url.QueryUnescape(v)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsVal = append(p.QueryEscapedURLParamsVal, rawParam{Key: k, Val: unescapedVal, Type: rawParamTypeString})
+			return nil
+		}
+		if needsQueryEscape(k) {
+			unescapedKey, err := url.QueryUnescape(k)
+			if err != nil {
+				return err
+			}
+			p.QueryEscapedURLParamsKey = append(p.QueryEscapedURLParamsKey, rawParam{Key: unescapedKey, Val: v, Type: rawParamTypeString})
+			return nil
+		}
 	}
 	p.QuotedURLParams = append(p.QuotedURLParams, rawParam{Key: k, Val: v, Type: rawParamTypeString})
 	return nil
@@ -100,7 +162,34 @@ func needsQueryEscape(s string) bool {
 	return strings.Contains(s, "%2")
 }
 
+func debugCurlCmd(c curlCmd) {
+	var buf bytes.Buffer
+	out := func(t string, a ...interface{}) {
+		buf.WriteString(fmt.Sprintf(t, a...))
+		buf.WriteString("\n")
+	}
+	out("")
+	out("Debugging curl command...")
+	log.Println(buf.String())
+	out("%d opts", len(c.opts))
+	for i, o := range c.opts {
+		out(" [%3d] %s", i, o)
+	}
+	out("%d headers", len(c.headers))
+	for i, o := range c.headers {
+		out(" [%3d] %q = %q", i, o.key, o.val)
+	}
+	out("%d uriParams", len(c.uriParams))
+	for i, o := range c.uriParams {
+		out(" [%3d] %q = %q", i, o.key, o.val)
+	}
+	fmt.Println(buf.String())
+}
+
 func createCurlCode(c curlCmd, unescape bool) (string, error) {
+	if *debug {
+		debugCurlCmd(c)
+	}
 	if len(c.opts) > 0 {
 		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.opts)
 	}
@@ -113,7 +202,9 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	// Data
 	uri := request.MakeURL("{{.URI}}",
 		{{range .URLParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
-		{{end}}{{range .URLParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .URLParams.QueryEscapedURLParamsVal}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .URLParams.QueryEscapedURLParamsKey}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, {{.Val}}},
+		{{end}}{{range .URLParams.QueryEscapedURLParamsBoth}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
 		{{end}}{{range .URLParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
 		{{end}}
 	)
@@ -125,7 +216,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	headers := map[string]string{
 		{{range .Headers}}"{{.Key}}": ` + "`" + `{{.Val}}` + "`" + `,
 		{{end}}
-	}{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParams) (not .DataParams.URLParams) }}
+	}{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParamsVal) (not .DataParams.QueryEscapedURLParamsKey) (not .DataParams.QueryEscapedURLParamsBoth) (not .DataParams.URLParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
 	{{ if .SerializeBodyOject }}
 	{
@@ -138,7 +229,9 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	{{ else }}
 	body := request.MakeRequestParams(
 		{{range .DataParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
-		{{end}}{{range .DataParams.QueryEscapedURLParams}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .DataParams.QueryEscapedURLParamsVal}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
+		{{end}}{{range .DataParams.QueryEscapedURLParamsKey}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, {{.Val}}},
+		{{end}}{{range .DataParams.QueryEscapedURLParamsBoth}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
 		{{end}}{{range .DataParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
 		{{end}}
 	)
@@ -190,7 +283,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	var urlParams rawParams
 
 	for _, x := range c.uriParams {
-		fillRawParams(x.key, x.val, &urlParams, unescape)
+		addToRawParams(x.key, x.val, &urlParams, unescape)
 	}
 
 	for _, h := range c.headers {
@@ -291,7 +384,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 			if len(parts) == 2 {
 				v = parts[1]
 			}
-			fillRawParams(k, v, &dataParams, unescape)
+			addToRawParams(k, v, &dataParams, unescape)
 		}
 	}
 

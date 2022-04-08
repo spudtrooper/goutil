@@ -1,6 +1,8 @@
 package must
 
 import (
+	"encoding/json"
+	"io/fs"
 	"io/ioutil"
 	"strconv"
 
@@ -42,4 +44,21 @@ func ReadLines(input string) []string {
 
 func WriteFile(f string, b []byte) {
 	chk(io.WriteFile(f, b))
+}
+
+func Marshal(v interface{}) []byte {
+	b, err := json.Marshal(v)
+	chk(err)
+	return b
+}
+
+func Unmarshal(b []byte, v interface{}) {
+	err := json.Unmarshal(b, v)
+	chk(err)
+}
+
+func ReadDir(dirname string) []fs.FileInfo {
+	files, err := ioutil.ReadDir(dirname)
+	chk(err)
+	return files
 }
