@@ -14,10 +14,13 @@ type Logger interface {
 
 func MakeLog(prefix string, mOpts ...MakeLogOption) Logger {
 	opts := MakeMakeLogOptions(mOpts...)
-	if opts.Color() {
-		return &colorLogger{base{"[" + prefix + "] "}}
+	if prefix != "" {
+		prefix = "[" + prefix + "] "
 	}
-	return &logger{base{"[" + prefix + "] "}}
+	if opts.Color() {
+		return &colorLogger{base{prefix}}
+	}
+	return &logger{base{prefix}}
 }
 
 type base struct {
