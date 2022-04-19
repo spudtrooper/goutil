@@ -217,7 +217,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		{{range .Headers}}"{{.Key}}": ` + "`" + `{{.Val}}` + "`" + `,
 		{{end}}
 		"cookie": request.CreateCookie(cookie),
-	}{{ if  and (not .DataParams.QuotedURLParams) (not .DataParams.QueryEscapedURLParamsVal) (not .DataParams.QueryEscapedURLParamsKey) (not .DataParams.QueryEscapedURLParamsBoth) (not .DataParams.URLParams) }}
+	}{{ if  and (not .DataParams) }}
 	body := ` + "`" + `{{.Data}}` + "`" + `
 	{{ if .SerializeBodyOject }}
 	{
@@ -229,11 +229,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 
 	{{ else }}
 	body := request.MakeRequestParams(
-		{{range .DataParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
-		{{end}}{{range .DataParams.QueryEscapedURLParamsVal}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
-		{{end}}{{range .DataParams.QueryEscapedURLParamsKey}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, {{.Val}}},
-		{{end}}{{range .DataParams.QueryEscapedURLParamsBoth}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
-		{{end}}{{range .DataParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
+		{{range .DataParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
 		{{end}}
 	)
 	{{ end }}
@@ -356,7 +352,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	}
 
 	var rawData string
-	var dataParams rawParams
+	var dataParams []rawParam
 	var dataStruct string
 	var bodyObject string
 
@@ -375,7 +371,16 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 			if len(parts) == 2 {
 				v = parts[1]
 			}
-			addToRawParams(k, v, &dataParams, unescape)
+			val, err := url.QueryUnescape(v)
+			if err != nil {
+				return "", errors.Errorf("unescaping %s: %v", v, err)
+			}
+			// TODO: Create a struct from the body if you can
+			dataParams = append(dataParams, rawParam{
+				Key: k,
+				Val: val,
+			})
+			// addToRawParams(k, v, &dataParams, unescape)
 		}
 	}
 
@@ -387,7 +392,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		URLParams           rawParams
 		Data                string
 		DataStruct          string
-		DataParams          rawParams
+		DataParams          []rawParam
 		BodyObject          string
 		SerializeBodyOject  bool
 		Method              string
