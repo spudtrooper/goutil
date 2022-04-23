@@ -2,9 +2,8 @@ package check
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/spudtrooper/goutil/errors"
+	goutilerrors "github.com/spudtrooper/goutil/errors"
 	"github.com/spudtrooper/goutil/parallel"
 )
 
@@ -18,7 +17,7 @@ func Check(b bool, checkOpts ...CheckOption) {
 		if msg == "" {
 			msg = "check failure"
 		}
-		log.Fatalf(msg)
+		panic(msg)
 	}
 }
 
@@ -32,7 +31,7 @@ func Err(err error) {
 // ErrAll creates an aggregate error and fails on it, if it exists
 func ErrAll(errs chan error) {
 	parallel.WaitFor(func() {
-		eb := errors.MakeErrorCollector()
+		eb := goutilerrors.MakeErrorCollector()
 		for e := range errs {
 			eb.Add(e)
 		}
