@@ -39,3 +39,13 @@ func Reverse(ss []string) {
 		ss[i], ss[last-i] = ss[last-i], ss[i]
 	}
 }
+
+func NonEmptyStrings(ss []string) []string {
+	res := []string{}
+	for _, s := range ss {
+		if s != "" {
+			res = append(res, s)
+		}
+	}
+	return res
+}
