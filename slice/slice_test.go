@@ -146,3 +146,49 @@ func TestStringDiff(t *testing.T) {
 		})
 	}
 }
+
+func TestNonEmptyStrings(t *testing.T) {
+	var tests = []struct {
+		name  string
+		input []string
+		want  []string
+	}{
+		{
+			name:  "empty",
+			input: []string{},
+			want:  []string{},
+		},
+		{
+			name:  "one empty",
+			input: []string{""},
+			want:  []string{},
+		},
+		{
+			name:  "many empty",
+			input: []string{"", "", ""},
+			want:  []string{},
+		},
+		{
+			name:  "one non-empty",
+			input: []string{"1"},
+			want:  []string{"1"},
+		},
+		{
+			name:  "many non-empty",
+			input: []string{"1", "2", "3"},
+			want:  []string{"1", "2", "3"},
+		},
+		{
+			name:  "mixed",
+			input: []string{"1", "", "2", "", "", "3"},
+			want:  []string{"1", "2", "3"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if want, got := test.want, NonEmptyStrings(test.input); !reflect.DeepEqual(want, got) {
+				t.Errorf("NonEmptyStrings(%v): want %v, got %v", test.input, want, got)
+			}
+		})
+	}
+}
