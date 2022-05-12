@@ -34,7 +34,40 @@ type Param struct {
 	Val interface{}
 }
 
+// Params is an array of Param
 type Params []Param
+
+// ParamsBuilder allows building a Params
+type ParamsBuilder interface {
+	Add(key string, val interface{}) ParamsBuilder
+	AddIfNotDefault(key string, val interface{}) ParamsBuilder
+	Build() Params
+}
+
+// MakeParamsBuilder creates a new ParamsBuilder
+func MakeParamsBuilder() ParamsBuilder {
+	return &paramsBuilder{
+		params: Params{},
+	}
+}
+
+type paramsBuilder struct {
+	params Params
+}
+
+func (b *paramsBuilder) Add(key string, val interface{}) ParamsBuilder {
+	b.params = append(b.params, MakeParam(key, val))
+	return b
+}
+
+func (b *paramsBuilder) AddIfNotDefault(key string, val interface{}) ParamsBuilder {
+	b.params = b.params.AddIfNotDefault(key, val)
+	return b
+}
+
+func (b *paramsBuilder) Build() Params {
+	return b.params
+}
 
 // MakeParam creates a Param
 func MakeParam(key string, val interface{}) Param {
@@ -44,6 +77,46 @@ func MakeParam(key string, val interface{}) Param {
 // AddStringIfNotEmpty adds another params if val is not empty
 func (p Params) AddStringIfNotEmpty(key, val string) Params {
 	if val != "" {
+		return append(p, Param{key, val})
+	}
+	return p
+}
+
+func isDefault(val interface{}) bool {
+	switch v := val.(type) {
+	case bool:
+		return !v
+	case int:
+		return v == 0
+	case uint8:
+		return v == uint8(0)
+	case uint16:
+		return v == uint16(0)
+	case uint32:
+		return v == uint32(0)
+	case uint64:
+		return v == uint64(0)
+	case int8:
+		return v == int8(0)
+	case int16:
+		return v == int16(0)
+	case int32:
+		return v == int32(0)
+	case int64:
+		return v == int64(0)
+	case float32:
+		return v == float32(0)
+	case float64:
+		return v == float64(0)
+	case string:
+		return v == ""
+	}
+	return false
+}
+
+// AddIfNotDefault adds another params if val is not a default value
+func (p Params) AddIfNotDefault(key string, val interface{}) Params {
+	if !isDefault(val) {
 		return append(p, Param{key, val})
 	}
 	return p
