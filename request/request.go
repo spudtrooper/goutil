@@ -244,6 +244,13 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 	}
 	reqStop := time.Now()
 
+	if resp.StatusCode != http.StatusOK {
+		if *requestDebug {
+			log.Printf("got non-OK status code: %d", resp.StatusCode)
+		}
+		return nil, errors.Errorf("request status code: %d", resp.StatusCode)
+	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
