@@ -3,7 +3,7 @@ package html
 import "regexp"
 
 var (
-	urlRE = regexp.MustCompile(`(https?://)([\.a-zA-Z_0-9/\-]+)`)
+	urlRE = regexp.MustCompile(`(https?://)([\.a-zA-Z_0-9/\-]*[a-zA-Z_0-9/\-]+)`)
 )
 
 func Linkify(text string) string {
