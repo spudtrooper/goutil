@@ -192,3 +192,68 @@ func TestNonEmptyStrings(t *testing.T) {
 		})
 	}
 }
+
+func TestInts(t *testing.T) {
+	var tests = []struct {
+		name    string
+		input   string
+		want    []int
+		opts    []IntsOption
+		wantErr bool
+	}{
+		{
+			name:  "empty",
+			input: "",
+			want:  []int{},
+		},
+		{
+			name:  "one",
+			input: "1",
+			want:  []int{1},
+		},
+		{
+			name:  "uniques",
+			input: "1,2,3",
+			want:  []int{1, 2, 3},
+		},
+		{
+			name:  "dups",
+			input: "1,2,3,1,2,3",
+			want:  []int{1, 2, 3, 1, 2, 3},
+		},
+		{
+			name:  "uniques pipe",
+			input: "1|2|3",
+			want:  []int{1, 2, 3},
+			opts:  []IntsOption{IntsSep("|")},
+		},
+		{
+			name:  "uniques trimSpace",
+			input: "1 , 2, 3 ",
+			want:  []int{1, 2, 3},
+			opts:  []IntsOption{IntsTrimSpace(true)},
+		},
+		{
+			name:    "bad input",
+			input:   "1,2,3,asdf",
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ints, err := Ints(test.input, test.opts...)
+			if test.wantErr {
+				if err != nil {
+					return
+				}
+				t.Fatalf("Ints want err, got none")
+			}
+			if err != nil {
+				t.Fatalf("Ints: %v", err)
+			}
+			if want, got := test.want, ints; !reflect.DeepEqual(want, got) {
+				t.Errorf("Ints(%q): want %v, got %v", test.input, want, got)
+			}
+		})
+	}
+}

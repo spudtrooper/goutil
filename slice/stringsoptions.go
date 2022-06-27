@@ -1,6 +1,5 @@
+// DO NOT EDIT MANUALLY: Generated from https://github.com/spudtrooper/genopts
 package slice
-
-//go:generate genopts --prefix=Strings --outfile=stringsoptions.go "trimSpace"
 
 type StringsOption func(*stringsOptionImpl)
 

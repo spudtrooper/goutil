@@ -1,11 +1,15 @@
 package slice
 
 import (
+	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
+	"github.com/spudtrooper/goutil/or"
 	"github.com/spudtrooper/goutil/sets"
 )
 
+//go:generate genopts --function Strings trimSpace
 func Strings(input, sep string, sOpts ...StringsOption) []string {
 	opts := MakeStringsOptions(sOpts...)
 	if input == "" {
@@ -48,4 +52,22 @@ func NonEmptyStrings(ss []string) []string {
 		}
 	}
 	return res
+}
+
+//go:generate genopts --function Ints sep:string trimSpace
+func Ints(s string, optss ...IntsOption) ([]int, error) {
+	opts := MakeIntsOptions(optss...)
+	sep := or.String(opts.Sep(), ",")
+	res := []int{}
+	for _, s := range NonEmptyStrings(strings.Split(s, sep)) {
+		if opts.TrimSpace() {
+			s = strings.TrimSpace(s)
+		}
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, errors.Errorf("strconv.Atoi(%q): %v", s, err)
+		}
+		res = append(res, i)
+	}
+	return res, nil
 }
