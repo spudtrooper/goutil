@@ -217,6 +217,11 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 			Timeout: timeout,
 		}
 	}
+	if opts.NoRedirects() {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, err
@@ -244,27 +249,33 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 	}
 	reqStop := time.Now()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != 302 /* TODO: use code */ {
 		if *requestDebug {
 			log.Printf("got non-OK status code: %d", resp.StatusCode)
 		}
 		return nil, errors.Errorf("request status code: %d", resp.StatusCode)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	var data []byte
 
-	resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
 
-	readStop := time.Now()
+		data, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 
-	if *requestStats {
-		reqDur := reqStop.Sub(start)
-		readDur := readStop.Sub(reqStop)
-		totalDur := readStop.Sub(start)
-		log.Printf("request stats: total:%v request:%v read:%v", totalDur, reqDur, readDur)
+		resp.Body.Close()
+
+		readStop := time.Now()
+
+		if *requestStats {
+			reqDur := reqStop.Sub(start)
+			readDur := readStop.Sub(reqStop)
+			totalDur := readStop.Sub(start)
+			log.Printf("request stats: total:%v request:%v read:%v", totalDur, reqDur, readDur)
+		}
+
 	}
 
 	if *requestDebug {

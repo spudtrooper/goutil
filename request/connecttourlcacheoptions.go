@@ -1,3 +1,4 @@
+// DO NOT EDIT MANUALLY: Generated from https://github.com/spudtrooper/genopts
 package request
 
 //go:generate genopts --prefix=ConnectToURLCache --outfile=connecttourlcacheoptions.go "port:int" "dbName:string"
