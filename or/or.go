@@ -153,7 +153,7 @@ func defaultValue[T SupportedType](v T) T {
 	case time.Duration:
 		res = time.Duration(0)
 	default:
-	panic("cannot reach this")
+		panic("cannot reach this")
 	}
 	return res.(T)
 }
