@@ -5,6 +5,7 @@ import (
 	realjson "encoding/json"
 
 	colorjson "github.com/TylerBrock/colorjson"
+	"github.com/spudtrooper/goutil/check"
 	"github.com/spudtrooper/goutil/or"
 )
 
@@ -25,4 +26,10 @@ func ColorMarshal(x interface{}, optss ...ColorMarshalOption) (string, error) {
 		return "", err
 	}
 	return string(s), nil
+}
+
+func MustColorMarshal(x interface{}, optss ...ColorMarshalOption) string {
+	s, err := ColorMarshal(x, optss...)
+	check.Err(err)
+	return s
 }

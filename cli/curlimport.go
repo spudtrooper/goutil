@@ -260,7 +260,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		log.Printf("cookies: %v", res.Cookies)
 	}
 	if printPayload {
-		log.Printf("payload: %s", request.MustFormatString(payload))
+		log.Printf("payload: %s", json.MustColorMarshal(payload))
 	}
 	check.Err(err)
 	`
