@@ -278,31 +278,54 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 
 	}
 
-	if *requestDebug {
-		prettyJSON, err := PrettyPrintJSON(data)
-		if err != nil {
-			log.Printf("ignoring prettyPrintJSON error: %v", err)
-			prettyJSON = string(data)
+	var isHTML, isJSON bool
+	accepts := strings.Split(req.Header.Get("Accept"), ",")
+	for _, a := range accepts {
+		if a == "text/html" {
+			isHTML = true
+			break
 		}
-		log.Printf("from url %q have response %s", uri, prettyJSON)
-		for k, vs := range resp.Header {
-			for _, v := range vs {
-				log.Printf("%s: %s", color.HiWhiteString(k), v)
+		if a == "text/json" {
+			isJSON = true
+			break
+		}
+	}
+
+	if *requestDebug {
+
+		if isJSON {
+			prettyJSON, err := PrettyPrintJSON(data)
+			if err != nil {
+				log.Printf("ignoring prettyPrintJSON error: %v", err)
+				prettyJSON = string(data)
 			}
+			log.Printf("from url %q have JSON response %s", uri, prettyJSON)
+			for k, vs := range resp.Header {
+				for _, v := range vs {
+					log.Printf("%s: %s", color.HiWhiteString(k), v)
+				}
+			}
+		}
+		if isHTML {
+			log.Printf("from url %q have HTML response %s", uri, string(data))
 		}
 	}
 
 	if len(data) > 0 {
 		if opts.CustomPayload() != nil {
-			if err := json.Unmarshal(data, opts.CustomPayload()); err != nil {
-				return nil, err
+			if isJSON {
+				if err := json.Unmarshal(data, opts.CustomPayload()); err != nil {
+					return nil, err
+				}
 			}
 		} else if result != nil {
-			if err := json.Unmarshal(data, &result); err != nil {
-				return nil, err
-			}
-			if *requestDebug {
-				log.Printf("got response: %+v", result)
+			if isJSON {
+				if err := json.Unmarshal(data, &result); err != nil {
+					return nil, err
+				}
+				if *requestDebug {
+					log.Printf("got response: %+v", result)
+				}
 			}
 		}
 	}
