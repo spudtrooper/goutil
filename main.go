@@ -1,4 +1,4 @@
-// Helper binary for using github.com/spudtrooper/goutil.
+// Binary for using github.com/spudtrooper/goutil.
 package main
 
 import (
