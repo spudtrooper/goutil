@@ -40,6 +40,11 @@ func NewFormBuilder() *FormBuilder {
 	}
 }
 
+// FormDataContentType returns the content type used for multipart forms
+func (f *FormBuilder) FormDataContentType() string {
+	return f.w.FormDataContentType()
+}
+
 // Field adds an entry with the key and value
 func (f *FormBuilder) Field(key string, val interface{}) error {
 	f.debugInfo.fields[key] = val
