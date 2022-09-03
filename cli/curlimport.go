@@ -33,6 +33,8 @@ var (
 	headerRE = regexp.MustCompile(`\s*-H '([^:]+): ([^']+)'`)
 	//   --data-raw '{...}' \
 	dataRawRE = regexp.MustCompile(`\s*--data-raw '([^']+)'`)
+	//   --data-raw $'{...}' \
+	dataRawDollarRE = regexp.MustCompile(`\s*--data-raw \$'([^']+)'`)
 	//  -X 'PUT' \
 	methodRE = regexp.MustCompile(`\s*-X '([^']+)'`)
 )
@@ -186,6 +188,29 @@ func debugCurlCmd(c curlCmd) {
 	fmt.Println(buf.String())
 }
 
+type formDataEntry struct {
+	Name, Value string
+}
+type formData []formDataEntry
+
+// form-data; name="text"\r\n\r\nus open\r\n
+var formDataRE = regexp.MustCompile(`form-data; name="([^"]+)"(.*)`)
+
+func parseFormData(s string) (formData, error) {
+	res := formData{}
+	// XXX: Can't capture before the -----'s, so splitting the line.
+	for _, part := range strings.Split(s, "------") {
+		if m := formDataRE.FindStringSubmatch(part); len(m) == 3 {
+			name, value := m[1], m[2]
+			// XXX: Don't know how to express these in the regexp.
+			value = strings.ReplaceAll(value, "\\r", "")
+			value = strings.ReplaceAll(value, "\\n", "")
+			res = append(res, formDataEntry{Name: name, Value: value})
+		}
+	}
+	return res, nil
+}
+
 func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	if *debug {
 		debugCurlCmd(c)
@@ -233,6 +258,13 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		{{end}}
 	)
 	{{ end }}
+
+	{{ if .FormData }}
+		form := url.Values{}
+		{{range .FormData}}form.Add("{{.Name}}", "{{.Value}}")
+		{{end}}
+		body = form.Encode()
+	{{ end}}
 
 	// Make the request
 	var payload interface{}
@@ -313,6 +345,16 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		return false
 	}
 
+	isFormData := func(s string) bool {
+		if s == "" {
+			return false
+		}
+		if strings.Contains(s, `form-data; name="`) {
+			return true
+		}
+		return false
+	}
+
 	// Types could be laid out with declarations following uses. Since we're
 	// adding this to funftion scope, we need to make sure declarations come
 	// first.
@@ -355,8 +397,15 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	var dataParams []rawParam
 	var dataStruct string
 	var bodyObject string
+	var formDataEntries []formDataEntry
 
-	if isRawData(c.data) {
+	if isFormData(c.data) {
+		formData, err := parseFormData(c.data)
+		if err != nil {
+			return "", errors.Errorf("converting %q to form value: %v", c.data, err)
+		}
+		formDataEntries = formData
+	} else if isRawData(c.data) {
 		rawData = c.data
 		ds, err := jsontogo.JSONToGo(c.data, "Body")
 		if err != nil {
@@ -393,6 +442,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		Data                string
 		DataStruct          string
 		DataParams          []rawParam
+		FormData            []formDataEntry
 		BodyObject          string
 		SerializeBodyOject  bool
 		Method              string
@@ -405,6 +455,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		Data:                rawData,
 		DataStruct:          dataStruct,
 		DataParams:          dataParams,
+		FormData:            formDataEntries,
 		BodyObject:          bodyObject,
 		SerializeBodyOject:  *curlBodyStruct,
 		Method:              c.method,
@@ -490,6 +541,11 @@ func parseCurlCmd(content string) (*curlCmd, error) {
 			c.headers = append(c.headers, header{key, val})
 		}
 		if m := dataRawRE.FindStringSubmatch(line); len(m) == 2 {
+			data := m[1]
+			data = strings.ReplaceAll(data, "\\\\n", "\\n")
+			c.data = data
+		}
+		if m := dataRawDollarRE.FindStringSubmatch(line); len(m) == 2 {
 			data := m[1]
 			data = strings.ReplaceAll(data, "\\\\n", "\\n")
 			c.data = data

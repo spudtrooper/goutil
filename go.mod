@@ -2,6 +2,10 @@ module github.com/spudtrooper/goutil
 
 go 1.18
 
+replace github.com/spudtrooper/jsontogo => ../jsontogo
+
+replace github.com/spudtrooper/minimalcli => ../minimalcli
+
 require (
 	github.com/TylerBrock/colorjson v0.0.0-20200706003622-8a50f05110d2
 	github.com/fatih/color v1.13.0
@@ -26,6 +30,7 @@ require (
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/motki/cli v0.4.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
