@@ -289,24 +289,23 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 			totalDur := readStop.Sub(start)
 			log.Printf("request stats: total:%v request:%v read:%v", totalDur, reqDur, readDur)
 		}
-
 	}
 
-	var isHTML, isJSON bool
+	var isHTML bool
 	accepts := strings.Split(req.Header.Get("Accept"), ",")
 	for _, a := range accepts {
 		if a == "text/html" {
 			isHTML = true
 			break
 		}
-		if a == "text/json" {
-			isJSON = true
-			break
-		}
+	}
+
+	isJSON := true
+	if isHTML {
+		isJSON = false
 	}
 
 	if *requestDebug {
-
 		if isJSON {
 			prettyJSON, err := PrettyPrintJSON(data)
 			if err != nil {
