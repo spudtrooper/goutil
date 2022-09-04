@@ -249,7 +249,22 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 	}
 	reqStop := time.Now()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != 302 /* TODO: use code */ {
+	isAllowedStatusCode := func() bool {
+		for _, code := range opts.AllowedStatusCodes() {
+			if code == resp.StatusCode {
+				return true
+			}
+		}
+		if resp.StatusCode == http.StatusOK {
+			return true
+		}
+		if resp.StatusCode == 302 /* TODO: use code */ {
+			return true
+		}
+		return false
+	}
+
+	if !isAllowedStatusCode() {
 		if *requestDebug {
 			log.Printf("got non-OK status code: %d", resp.StatusCode)
 		}
@@ -258,8 +273,7 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 
 	var data []byte
 
-	if resp.StatusCode == http.StatusOK {
-
+	if resp.StatusCode != 302 {
 		data, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err

@@ -3,7 +3,7 @@ package request
 
 import "time"
 
-//go:generate genopts --prefix=Request --outfile=requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration" "noRedirects"
+//go:generate genopts --prefix=Request --outfile=requestoptions.go "extraHeaders:map[string]string" "host:string" "customPayload:interface{}" "proxyURL:string" "timeout:time.Duration" "noRedirects" "allowedStatusCodes:[]int"
 
 type RequestOption func(*requestOptionImpl)
 
@@ -14,6 +14,7 @@ type RequestOptions interface {
 	ProxyURL() string
 	Timeout() time.Duration
 	NoRedirects() bool
+	AllowedStatusCodes() []int
 }
 
 func RequestExtraHeaders(extraHeaders map[string]string) RequestOption {
@@ -82,13 +83,25 @@ func RequestNoRedirectsFlag(noRedirects *bool) RequestOption {
 	}
 }
 
+func RequestAllowedStatusCodes(allowedStatusCodes []int) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.allowedStatusCodes = allowedStatusCodes
+	}
+}
+func RequestAllowedStatusCodesFlag(allowedStatusCodes *[]int) RequestOption {
+	return func(opts *requestOptionImpl) {
+		opts.allowedStatusCodes = *allowedStatusCodes
+	}
+}
+
 type requestOptionImpl struct {
-	extraHeaders  map[string]string
-	host          string
-	customPayload interface{}
-	proxyURL      string
-	timeout       time.Duration
-	noRedirects   bool
+	extraHeaders       map[string]string
+	host               string
+	customPayload      interface{}
+	proxyURL           string
+	timeout            time.Duration
+	noRedirects        bool
+	allowedStatusCodes []int
 }
 
 func (r *requestOptionImpl) ExtraHeaders() map[string]string { return r.extraHeaders }
@@ -97,6 +110,7 @@ func (r *requestOptionImpl) CustomPayload() interface{}      { return r.customPa
 func (r *requestOptionImpl) ProxyURL() string                { return r.proxyURL }
 func (r *requestOptionImpl) Timeout() time.Duration          { return r.timeout }
 func (r *requestOptionImpl) NoRedirects() bool               { return r.noRedirects }
+func (r *requestOptionImpl) AllowedStatusCodes() []int       { return r.allowedStatusCodes }
 
 func makeRequestOptionImpl(opts ...RequestOption) *requestOptionImpl {
 	res := &requestOptionImpl{}
