@@ -11,6 +11,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/go-errors/errors v1.4.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/rivo/duplo v0.0.0-20180323201418-c4ec823d58cd
 	github.com/spudtrooper/jsontogo v0.0.0-20220310212318-5dc9d8f01875
@@ -30,6 +31,7 @@ require (
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/motki/cli v0.4.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
