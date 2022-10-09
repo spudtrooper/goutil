@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+// Ints returns a if len(a) != 0, otherwise b
+func Ints(a, b []int) []int {
+	if len(a) != 0 {
+		return a
+	}
+	return b
+}
+
 // Int returns a if a != 0, otherwise b
 func Int(a, b int) int {
 	if a != 0 {
