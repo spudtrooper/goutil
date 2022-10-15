@@ -15,16 +15,18 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/flags"
+	goutiljson "github.com/spudtrooper/goutil/json"
 	"github.com/spudtrooper/goutil/or"
 )
 
 var (
-	requestStats     = flags.Bool("request_stats", "print verbose debugging of request timing")
-	requestDebug     = flags.Bool("request_debug", "print verbose debugging of requests")
-	readFromURLCache = flags.Bool("request_read_from_url_cache", "read from the url cache")
-	writeToURLCache  = flags.Bool("request_write_to_url_cache", "write to the url cache after every request")
-	urlCachePort     = flags.Int("request_url_cache_port", "port for the url cache")
-	urlCacheDBName   = flags.String("request_url_cache_db_name", "DB name for the url cache")
+	requestStats        = flags.Bool("request_stats", "print verbose debugging of request timing")
+	requestDebug        = flags.Bool("request_debug", "print verbose debugging of requests")
+	requestDebugPayload = flags.Bool("request_debug_payload", "print verbose debugging of request payloads")
+	readFromURLCache    = flags.Bool("request_read_from_url_cache", "read from the url cache")
+	writeToURLCache     = flags.Bool("request_write_to_url_cache", "write to the url cache after every request")
+	urlCachePort        = flags.Int("request_url_cache_port", "port for the url cache")
+	urlCacheDBName      = flags.String("request_url_cache_db_name", "DB name for the url cache")
 )
 
 var globalURLCache *urlCache
@@ -369,6 +371,14 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 		if err := mustGetGlobalURLCache().SaveRequest(context.Background(), uri, res); err != nil {
 			return nil, err
 		}
+	}
+
+	if result != nil && *requestDebugPayload {
+		s, err := goutiljson.ColorMarshal(result)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("payload: %+v", s)
 	}
 
 	return &res, nil
