@@ -43,6 +43,14 @@ func (e *errorCollector) Empty() bool {
 	return len(e.errs) == 0
 }
 
+func FromChannel(errs <-chan error) error {
+	b := MakeErrorCollector()
+	for err := range errs {
+		b.Add(err)
+	}
+	return b.Build()
+}
+
 // MakeSyncErrorCollector creates a ErrorCollector that is thread-safe.
 func MakeSyncErrorCollector() ErrorCollector {
 	return &threadSafeCollector{}
