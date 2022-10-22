@@ -226,11 +226,11 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 
 	// Data
 	uri := request.MakeURL("{{.URI}}",
-		{{range .URLParams.QuotedURLParams}}request.Param{"{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `},
-		{{end}}{{range .URLParams.QueryEscapedURLParamsVal}}request.Param{"{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
-		{{end}}{{range .URLParams.QueryEscapedURLParamsKey}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, {{.Val}}},
-		{{end}}{{range .URLParams.QueryEscapedURLParamsBoth}}request.Param{` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)},
-		{{end}}{{range .URLParams.URLParams}}request.Param{"{{.Key}}", {{.Val}}},
+		{{range .URLParams.QuotedURLParams}}request.MakeParam("{{.Key}}", ` + "`" + `{{.Val}}` + "`" + `),
+		{{end}}{{range .URLParams.QueryEscapedURLParamsVal}}request.MakeParam("{{.Key}}", ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)),
+		{{end}}{{range .URLParams.QueryEscapedURLParamsKey}}request.MakeParam(` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, {{.Val}}),
+		{{end}}{{range .URLParams.QueryEscapedURLParamsBoth}}request.MakeParam(` + "url.QueryEscape(`" + `{{.Key}}` + "`" + `)` + `, ` + "url.QueryEscape(`" + `{{.Val}}` + "`" + `)),
+		{{end}}{{range .URLParams.URLParams}}request.MakeParam("{{.Key}}", {{.Val}}),
 		{{end}}
 	)
 	cookie := [][2]string{

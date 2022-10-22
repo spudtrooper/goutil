@@ -2,8 +2,6 @@ module github.com/spudtrooper/goutil
 
 go 1.18
 
-replace github.com/spudtrooper/jsontogo => ../jsontogo
-
 replace github.com/spudtrooper/minimalcli => ../minimalcli
 
 require (
