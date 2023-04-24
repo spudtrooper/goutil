@@ -23,6 +23,19 @@ func MakeLog(prefix string, mOpts ...MakeLogOption) Logger {
 	return &logger{base{prefix}}
 }
 
+type defaultLogger struct{}
+
+func (l *defaultLogger) Printf(tmpl string, args ...interface{}) { log.Printf(tmpl, args...) }
+func (l *defaultLogger) Println(s string)                        { log.Println(s) }
+func (l *defaultLogger) Fatalf(tmpl string, args ...interface{}) { log.Fatalf(tmpl, args...) }
+
+func Must(logger Logger) Logger {
+	if logger != nil {
+		return logger
+	}
+	return &defaultLogger{}
+}
+
 type base struct {
 	prefix string
 }

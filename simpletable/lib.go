@@ -1,35 +1,74 @@
+// DO NOT EDIT MANUALLY: Generated from https://github.com/spudtrooper/genopts
 package simpletable
 
-import (
-	"io"
+import "fmt"
 
-	"github.com/olekukonko/tablewriter"
-)
-
-type impl struct {
-	table *tablewriter.Table
+type NewOption struct {
+	f func(*newOptionImpl)
+	s string
 }
 
-type SimpleTable interface {
-	Append(row []string)
-	Render()
+func (o NewOption) String() string { return o.s }
+
+type NewOptions interface {
+	Header() []string
+	HasHeader() bool
+	NoBorder() bool
+	HasNoBorder() bool
 }
 
-//go:generate genopts --function New noBorder "header:[]string"
-func New(writer io.Writer, optss ...NewOption) SimpleTable {
-	opts := MakeNewOptions(optss...)
+func NewHeader(header []string) NewOption {
+	return NewOption{func(opts *newOptionImpl) {
+		opts.has_header = true
+		opts.header = header
+	}, fmt.Sprintf("simpletable.NewHeader([]string %+v)", header)}
+}
+func NewHeaderFlag(header *[]string) NewOption {
+	return NewOption{func(opts *newOptionImpl) {
+		if header == nil {
+			return
+		}
+		opts.has_header = true
+		opts.header = *header
+	}, fmt.Sprintf("simpletable.NewHeader([]string %+v)", header)}
+}
 
-	table := tablewriter.NewWriter(writer)
-	table.SetBorder(!opts.NoBorder())
-	if len(opts.Header()) > 0 {
-		table.SetHeader(opts.Header())
+func NewNoBorder(noBorder bool) NewOption {
+	return NewOption{func(opts *newOptionImpl) {
+		opts.has_noBorder = true
+		opts.noBorder = noBorder
+	}, fmt.Sprintf("simpletable.NewNoBorder(bool %+v)", noBorder)}
+}
+func NewNoBorderFlag(noBorder *bool) NewOption {
+	return NewOption{func(opts *newOptionImpl) {
+		if noBorder == nil {
+			return
+		}
+		opts.has_noBorder = true
+		opts.noBorder = *noBorder
+	}, fmt.Sprintf("simpletable.NewNoBorder(bool %+v)", noBorder)}
+}
+
+type newOptionImpl struct {
+	header       []string
+	has_header   bool
+	noBorder     bool
+	has_noBorder bool
+}
+
+func (n *newOptionImpl) Header() []string  { return n.header }
+func (n *newOptionImpl) HasHeader() bool   { return n.has_header }
+func (n *newOptionImpl) NoBorder() bool    { return n.noBorder }
+func (n *newOptionImpl) HasNoBorder() bool { return n.has_noBorder }
+
+func makeNewOptionImpl(opts ...NewOption) *newOptionImpl {
+	res := &newOptionImpl{}
+	for _, opt := range opts {
+		opt.f(res)
 	}
-
-	return &impl{
-		table: table,
-	}
+	return res
 }
 
-func (s *impl) Append(row []string) { s.table.Append(row) }
-
-func (s *impl) Render() { s.table.Render() }
+func MakeNewOptions(opts ...NewOption) NewOptions {
+	return makeNewOptionImpl(opts...)
+}
