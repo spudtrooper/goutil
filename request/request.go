@@ -20,13 +20,14 @@ import (
 )
 
 var (
-	requestStats        = flags.Bool("request_stats", "print verbose debugging of request timing")
-	requestDebug        = flags.Bool("request_debug", "print verbose debugging of requests")
-	requestDebugPayload = flags.Bool("request_debug_payload", "print verbose debugging of request payloads")
-	readFromURLCache    = flags.Bool("request_read_from_url_cache", "read from the url cache")
-	writeToURLCache     = flags.Bool("request_write_to_url_cache", "write to the url cache after every request")
-	urlCachePort        = flags.Int("request_url_cache_port", "port for the url cache")
-	urlCacheDBName      = flags.String("request_url_cache_db_name", "DB name for the url cache")
+	requestStats         = flags.Bool("request_stats", "print verbose debugging of request timing")
+	requestDebug         = flags.Bool("request_debug", "print verbose debugging of requests")
+	requestDebugPayload  = flags.Bool("request_debug_payload", "print verbose debugging of request payloads")
+	requestUseRawPayload = flags.Bool("request_use_raw_payload", "don't normalize request payloads by stripping non-JASON from the front and back")
+	readFromURLCache     = flags.Bool("request_read_from_url_cache", "read from the url cache")
+	writeToURLCache      = flags.Bool("request_write_to_url_cache", "write to the url cache after every request")
+	urlCachePort         = flags.Int("request_url_cache_port", "port for the url cache")
+	urlCacheDBName       = flags.String("request_url_cache_db_name", "DB name for the url cache")
 )
 
 var globalURLCache *urlCache
@@ -305,6 +306,11 @@ func request(method, uri string, result interface{}, body io.Reader, rOpts ...Re
 	isJSON := true
 	if isHTML {
 		isJSON = false
+	}
+
+	if !*requestUseRawPayload {
+		s := string(data)
+		data = []byte(strings.TrimPrefix(s, "for (;;);"))
 	}
 
 	if *requestDebug {
