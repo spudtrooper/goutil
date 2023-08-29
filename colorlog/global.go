@@ -65,3 +65,8 @@ func SpecialStrings(ss ...string) {
 func SpecialString(c color.Color) {
 	globalLogger.SpecialString(c)
 }
+
+// So we can use this in fmt.Printf
+func Sprintf(tmpl string, args ...interface{}) string {
+	globalLogger.Printf(tmpl, args...)
+}

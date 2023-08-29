@@ -1,5 +1,4 @@
-// curlimport will imort a curl command into the goutil/request framework.
-package cli
+package curlimport
 
 import (
 	"bytes"
@@ -39,15 +38,15 @@ var (
 	methodRE = regexp.MustCompile(`\s*-X '([^']+)'`)
 )
 
-type uriParam struct{ key, val string }
-type header struct{ key, val string }
-type curlCmd struct {
-	opts      []string
-	uri       string
-	uriParams []uriParam
-	headers   []header
-	data      string
-	method    string
+type URIParam struct{ Key, Val string }
+type Header struct{ Key, Val string }
+type CurlCmd struct {
+	Opts      []string
+	URI       string
+	URIParams []URIParam
+	Headers   []Header
+	Data      string
+	Method    string
 }
 
 type renderedParam struct {
@@ -164,7 +163,7 @@ func needsQueryEscape(s string) bool {
 	return strings.Contains(s, "%2")
 }
 
-func debugCurlCmd(c curlCmd) {
+func debugCurlCmd(c CurlCmd) {
 	var buf bytes.Buffer
 	out := func(t string, a ...interface{}) {
 		buf.WriteString(fmt.Sprintf(t, a...))
@@ -173,17 +172,17 @@ func debugCurlCmd(c curlCmd) {
 	out("")
 	out("Debugging curl command...")
 	log.Println(buf.String())
-	out("%d opts", len(c.opts))
-	for i, o := range c.opts {
+	out("%d opts", len(c.Opts))
+	for i, o := range c.Opts {
 		out(" [%3d] %s", i, o)
 	}
-	out("%d headers", len(c.headers))
-	for i, o := range c.headers {
-		out(" [%3d] %q = %q", i, o.key, o.val)
+	out("%d headers", len(c.Headers))
+	for i, o := range c.Headers {
+		out(" [%3d] %q = %q", i, o.Key, o.Val)
 	}
-	out("%d uriParams", len(c.uriParams))
-	for i, o := range c.uriParams {
-		out(" [%3d] %q = %q", i, o.key, o.val)
+	out("%d uriParams", len(c.URIParams))
+	for i, o := range c.URIParams {
+		out(" [%3d] %q = %q", i, o.Key, o.Val)
 	}
 	fmt.Println(buf.String())
 }
@@ -211,12 +210,12 @@ func parseFormData(s string) (formData, error) {
 	return res, nil
 }
 
-func createCurlCode(c curlCmd, unescape bool) (string, error) {
+func createCurlCode(c CurlCmd, unescape, curlBodyStruct bool) (string, error) {
 	if *debug {
 		debugCurlCmd(c)
 	}
-	if len(c.opts) > 0 {
-		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.opts)
+	if len(c.Opts) > 0 {
+		log.Printf("OOOOPS: can't support any options yet. You tried to specify the following options: %v", c.Opts)
 	}
 	t := `
 	// Options
@@ -301,13 +300,13 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	var cookies, queryEscapedCookies []renderedParam
 	var urlParams rawParams
 
-	for _, x := range c.uriParams {
-		addToRawParams(x.key, x.val, &urlParams, unescape)
+	for _, x := range c.URIParams {
+		addToRawParams(x.Key, x.Val, &urlParams, unescape)
 	}
 
-	for _, h := range c.headers {
-		if strings.ToLower(h.key) == "cookie" {
-			for _, c := range strings.Split(h.val, "; ") {
+	for _, h := range c.Headers {
+		if strings.ToLower(h.Key) == "cookie" {
+			for _, c := range strings.Split(h.Val, "; ") {
 				parts := strings.SplitN(c, "=", 2)
 				var key, val string
 				if len(parts) == 0 {
@@ -331,7 +330,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 				}
 			}
 		} else {
-			headers = append(headers, renderedParam{h.key, h.val})
+			headers = append(headers, renderedParam{h.Key, h.Val})
 		}
 	}
 
@@ -399,22 +398,22 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 	var bodyObject string
 	var formDataEntries []formDataEntry
 
-	if isFormData(c.data) {
-		formData, err := parseFormData(c.data)
+	if isFormData(c.Data) {
+		formData, err := parseFormData(c.Data)
 		if err != nil {
-			return "", errors.Errorf("converting %q to form value: %v", c.data, err)
+			return "", errors.Errorf("converting %q to form value: %v", c.Data, err)
 		}
 		formDataEntries = formData
-	} else if isRawData(c.data) {
-		rawData = c.data
-		ds, err := jsontogo.JSONToGo(c.data, "Body")
+	} else if isRawData(c.Data) {
+		rawData = c.Data
+		ds, err := jsontogo.JSONToGo(c.Data, "Body")
 		if err != nil {
-			return "", errors.Errorf("converting %q to a struct: %v", c.data, err)
+			return "", errors.Errorf("converting %q to a struct: %v", c.Data, err)
 		}
 		dataStruct = reverseTypeOrder(ds)
-		bodyObject = "Body" + createBodyObject(dataStruct, c.data)
+		bodyObject = "Body" + createBodyObject(dataStruct, c.Data)
 	} else {
-		for _, p := range strings.Split(c.data, "&") {
+		for _, p := range strings.Split(c.Data, "&") {
 			parts := strings.SplitN(p, "=", 2)
 			k, v := parts[0], ""
 			if len(parts) == 2 {
@@ -447,7 +446,7 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		SerializeBodyOject  bool
 		Method              string
 	}{
-		URI:                 c.uri,
+		URI:                 c.URI,
 		Headers:             headers,
 		Cookies:             cookies,
 		QueryEscapedCookies: queryEscapedCookies,
@@ -457,8 +456,8 @@ func createCurlCode(c curlCmd, unescape bool) (string, error) {
 		DataParams:          dataParams,
 		FormData:            formDataEntries,
 		BodyObject:          bodyObject,
-		SerializeBodyOject:  *curlBodyStruct,
-		Method:              c.method,
+		SerializeBodyOject:  curlBodyStruct,
+		Method:              c.Method,
 	}
 	res, err := renderTemplate(t, "curl-code", data)
 	if err != nil {
@@ -500,16 +499,16 @@ func renderTemplate(t string, name string, data interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func parseCurlCmd(content string) (*curlCmd, error) {
-	c := &curlCmd{}
+func parseCurlCmd(content string) (*CurlCmd, error) {
+	c := &CurlCmd{}
 
 	for _, line := range strings.Split(content, "\n") {
-		if c.uri == "" {
+		if c.URI == "" {
 			m := curlCmdRE.FindStringSubmatch(line)
 			check.Check(len(m) == 3, check.CheckMessage(fmt.Sprintf("expecting match of length 3 and got: %+v for line: %s", m, line)))
 			opts, uri := m[1], m[2]
 			rawUri := strings.SplitN(uri, "?", 2)[0]
-			c.uri = rawUri
+			c.URI = rawUri
 			u, err := url.Parse(uri)
 			if err != nil {
 				return nil, errors.Errorf("url.Parse(%q): %v", uri, err)
@@ -528,39 +527,39 @@ func parseCurlCmd(content string) (*curlCmd, error) {
 					return nil, errors.Errorf("unexpected parts: %+v", parts)
 				}
 				if key != "" {
-					c.uriParams = append(c.uriParams, uriParam{key, val})
+					c.URIParams = append(c.URIParams, URIParam{key, val})
 				}
 			}
 			if arr := slice.Strings(strings.TrimSpace(opts), " "); len(arr) > 0 {
-				c.opts = arr
+				c.Opts = arr
 			}
 			continue
 		}
 		if m := headerRE.FindStringSubmatch(line); len(m) == 3 {
 			key, val := m[1], m[2]
-			c.headers = append(c.headers, header{key, val})
+			c.Headers = append(c.Headers, Header{key, val})
 		}
 		if m := dataRawRE.FindStringSubmatch(line); len(m) == 2 {
 			data := m[1]
 			data = strings.ReplaceAll(data, "\\\\n", "\\n")
-			c.data = data
+			c.Data = data
 		}
 		if m := dataRawDollarRE.FindStringSubmatch(line); len(m) == 2 {
 			data := m[1]
 			data = strings.ReplaceAll(data, "\\\\n", "\\n")
-			c.data = data
+			c.Data = data
 		}
 		if m := methodRE.FindStringSubmatch(line); len(m) == 2 {
 			method := m[1]
-			c.method = method
+			c.Method = method
 		}
 	}
 
-	if c.method == "" {
-		if c.data == "" {
-			c.method = "GET"
+	if c.Method == "" {
+		if c.Data == "" {
+			c.Method = "GET"
 		} else {
-			c.method = "POST"
+			c.Method = "POST"
 		}
 	}
 
@@ -573,7 +572,7 @@ func curlImport(content, outfile string, run, createBodyStruct, unescape bool) e
 		return errors.Errorf("parseCurlCmd: %v", err)
 	}
 
-	code, err := createCurlCode(*c, unescape)
+	code, err := createCurlCode(*c, unescape, createBodyStruct)
 	if err != nil {
 		return errors.Errorf("createCurlCode(%+v): %v", c, err)
 	}

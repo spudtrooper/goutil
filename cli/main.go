@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/go-errors/errors"
+	"github.com/spudtrooper/goutil/curlimport"
 	"github.com/spudtrooper/goutil/flags"
 	"github.com/spudtrooper/goutil/gitversion"
 	minimalcli "github.com/spudtrooper/minimalcli/app"
@@ -46,7 +47,7 @@ func Main(ctx context.Context) error {
 		if s == "" {
 			return errors.Errorf("required either --curl_file or --curl_string")
 		}
-		return curlImport(s, *curlOutfile, *curlRun, *curlBodyStruct, *curlUnescape)
+		return curlimport.Import(s, *curlOutfile, *curlRun, *curlBodyStruct, *curlUnescape)
 	})
 
 	if err := app.Run(ctx); err != nil {

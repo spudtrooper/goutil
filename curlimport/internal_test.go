@@ -1,5 +1,4 @@
-// curlimport will imort a curl command into the goutil/request framework.
-package cli
+package curlimport
 
 import (
 	"reflect"
@@ -13,7 +12,7 @@ func TestParseCurlCmd(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
-		want    *curlCmd
+		want    *CurlCmd
 		wantErr bool
 	}{
 		{
@@ -23,13 +22,13 @@ func TestParseCurlCmd(t *testing.T) {
 			-H 'authority: community.hannity.com' \
 			--data-raw 'name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=' \
 			--compressed`,
-			want: &curlCmd{
-				uri: "https://community.hannity.com/u/tucker_carlson.json",
-				headers: []header{
-					{key: "authority", val: "community.hannity.com"},
+			want: &CurlCmd{
+				URI: "https://community.hannity.com/u/tucker_carlson.json",
+				Headers: []Header{
+					{Key: "authority", Val: "community.hannity.com"},
 				},
-				data:   "name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=",
-				method: "PUT",
+				Data:   "name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=",
+				Method: "PUT",
 			},
 		},
 		{
@@ -38,13 +37,13 @@ func TestParseCurlCmd(t *testing.T) {
 			-H 'authority: community.hannity.com' \
 			--data-raw 'name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=' \
 			--compressed`,
-			want: &curlCmd{
-				uri: "https://community.hannity.com/u/tucker_carlson.json",
-				headers: []header{
-					{key: "authority", val: "community.hannity.com"},
+			want: &CurlCmd{
+				URI: "https://community.hannity.com/u/tucker_carlson.json",
+				Headers: []Header{
+					{Key: "authority", Val: "community.hannity.com"},
 				},
-				data:   "name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=",
-				method: "POST",
+				Data:   "name=The+Tucker+Carlson&title=&primary_group_id=&flair_group_id=",
+				Method: "POST",
 			},
 		},
 		{
@@ -52,18 +51,18 @@ func TestParseCurlCmd(t *testing.T) {
 			content: `curl 'https://community.hannity.com/u/tucker_carlson.json' \
 				-H 'authority: community.hannity.com' \
 				--compressed`,
-			want: &curlCmd{
-				uri: "https://community.hannity.com/u/tucker_carlson.json",
-				headers: []header{
-					{key: "authority", val: "community.hannity.com"},
+			want: &CurlCmd{
+				URI: "https://community.hannity.com/u/tucker_carlson.json",
+				Headers: []Header{
+					{Key: "authority", Val: "community.hannity.com"},
 				},
-				method: "GET",
+				Method: "GET",
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := parseCurlCmd(test.content)
+			got, err := Parse(test.content)
 			if (err != nil) != test.wantErr {
 				t.Errorf("parseCurlCmd() error = %v, wantErr %v", err, test.wantErr)
 				return

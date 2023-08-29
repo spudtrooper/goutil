@@ -2,6 +2,7 @@
 package colorlog
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 
@@ -37,6 +38,12 @@ func (l *logger) SpecialString(c color.Color) { l.specialString = c }
 type transform struct {
 	col    color.Color
 	format string
+}
+
+// Sprintf transforms the output be colorized according to the current rules
+func (l *logger) Sprintf(tmpl string, args ...interface{}) string {
+	newTmpl, newArgs, _ := l.printf(tmpl, args...)
+	return fmt.Sprintf(newTmpl, newArgs...)
 }
 
 // Println transforms the output be colorized according to the current rules
