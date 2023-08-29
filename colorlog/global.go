@@ -68,5 +68,5 @@ func SpecialString(c color.Color) {
 
 // So we can use this in fmt.Printf
 func Sprintf(tmpl string, args ...interface{}) string {
-	globalLogger.Printf(tmpl, args...)
+	return globalLogger.Sprintf(tmpl, args...)
 }
