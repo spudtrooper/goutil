@@ -158,7 +158,7 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 			if !fieldsToUse[field.Name] {
 				continue
 			}
-			names = append(names, field.Name)
+			names = append(names, fieldName(field.Name))
 			placeholders = append(placeholders, "?")
 			v := val.Field(i).Interface()
 			if val.Field(i).Type().Name() == "string" {
