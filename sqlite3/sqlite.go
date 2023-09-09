@@ -31,9 +31,9 @@ func createDBIfNotExists(dbname string) (*sql.DB, error) {
 	return db, nil
 }
 
-//go:generate genopts --function CreateAndPopulateTable dropIfExists primaryKey:string createDBIfNotExists
-func CreateAndPopulateTable(dbname, tableName string, data []interface{}, optss ...CreateAndPopulateTableOption) error {
-	opts := MakeCreateAndPopulateTableOptions(optss...)
+//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists
+func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
+	opts := MakePopulateSqlite3TableOptions(optss...)
 
 	primaryKey := opts.PrimaryKey()
 
