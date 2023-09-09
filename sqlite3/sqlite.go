@@ -50,9 +50,6 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 
 	fieldName := func(structFieldName string) string {
 		res := structFieldName
-		if opts.LowerCaseColumnNames() {
-			res = strings.ToLower(res)
-		}
 		if opts.SnakeCaseColumnNames() {
 			res = toSnakeCase(res)
 		}
@@ -60,6 +57,9 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 			res = strings.ReplaceAll(res, " ", "_")
 			res = strings.ReplaceAll(res, "-", "_")
 			res = strings.ReplaceAll(res, ".", "_")
+		}
+		if opts.LowerCaseColumnNames() {
+			res = strings.ToLower(res)
 		}
 		return res
 	}
