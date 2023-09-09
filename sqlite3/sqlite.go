@@ -1,0 +1,155 @@
+package util
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"os"
+	"reflect"
+	"strings"
+
+	"github.com/pkg/errors"
+
+	_ "github.com/mattn/go-sqlite3"
+)
+
+func createDBIfNotExists(dbname string) (*sql.DB, error) {
+	// Check if the file exists
+	if _, err := os.Stat(dbname); os.IsNotExist(err) {
+		// The database file doesn't exist, so we'll connect to it.
+		// This will create the database file.
+		db, err := sql.Open("sqlite3", dbname)
+		if err != nil {
+			return nil, err
+		}
+		return db, nil
+	} else if err != nil {
+		// An error occurred when trying to check the file
+		return nil, err
+	}
+
+	// If the database file already exists, we'll just open a connection to it.
+	db, err := sql.Open("sqlite3", dbname)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+//go:generate genopts --function CreateAndPopulateTable dropIfExists primaryKey:string createDBIfNotExists
+func CreateAndPopulateTable(dbname, tableName string, data []interface{}, optss ...CreateAndPopulateTableOption) error {
+	opts := MakeCreateAndPopulateTableOptions(optss...)
+
+	primaryKey := opts.PrimaryKey()
+
+	if dbname == "" {
+		return fmt.Errorf("no dbname provided")
+	}
+	if tableName == "" {
+		return fmt.Errorf("no tableName provided")
+	}
+
+	if len(data) == 0 {
+		return fmt.Errorf("no data provided")
+	}
+
+	var db *sql.DB
+	if opts.CreateDBIfNotExists() {
+		log.Printf("maybe creating database %s", dbname)
+		d, err := createDBIfNotExists(dbname)
+		if err != nil {
+			return errors.Errorf("Could not create database %s: %v", dbname, err)
+		}
+		db = d
+	} else {
+		d, err := sql.Open("sqlite3", dbname)
+		if err != nil {
+			return errors.Errorf("Could not open database %s: %v", dbname, err)
+		}
+		db = d
+	}
+
+	if db == nil {
+		return fmt.Errorf("no db")
+	}
+
+	defer db.Close()
+
+	// Maybe drop the table
+	if opts.DropIfExists() {
+		log.Printf("maybe dropping database %s", dbname)
+		sql := fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, tableName)
+		_, err := db.Exec(sql)
+		if err != nil {
+			return errors.Errorf("Could not drop table %s: sql : %s, error: %v",
+				tableName, sql, err)
+		}
+	}
+
+	// Reflect over the first item to create a table schema
+	typ := reflect.TypeOf(data[0])
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	fields := make([]string, 0, typ.NumField())
+	fieldsToUse := map[string]bool{}
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		columnType := ""
+
+		switch field.Type.Kind() {
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			columnType = "INTEGER"
+		case reflect.Float32, reflect.Float64:
+			columnType = "REAL"
+		case reflect.String:
+			columnType = "TEXT"
+		default:
+			// only handling a few basic types for illustration
+			continue
+		}
+
+		if field.Name == primaryKey {
+			columnType += " PRIMARY KEY"
+		}
+
+		fieldsToUse[field.Name] = true
+		fields = append(fields, fmt.Sprintf("%s %s", field.Name, columnType))
+	}
+	createSQL := fmt.Sprintf(`CREATE TABLE "%s" (%s)`, tableName, strings.Join(fields, ", "))
+	if _, err := db.Exec(createSQL); err != nil {
+		return errors.Errorf("Could not create table %s: sql: %s, error: %v", tableName, createSQL, err)
+	}
+
+	// Insert the data
+	for _, item := range data {
+		vals := make([]interface{}, 0, typ.NumField())
+		names := make([]string, 0, typ.NumField())
+		placeholders := make([]string, 0, typ.NumField())
+
+		val := reflect.ValueOf(item)
+		if val.Kind() == reflect.Ptr {
+			val = val.Elem()
+		}
+		for i := 0; i < val.NumField(); i++ {
+			field := typ.Field(i)
+			if !fieldsToUse[field.Name] {
+				continue
+			}
+			names = append(names, field.Name)
+			placeholders = append(placeholders, "?")
+			v := val.Field(i).Interface()
+			if val.Field(i).Type().Name() == "string" {
+				v = fmt.Sprintf(`"%s"`, v)
+			}
+			vals = append(vals, v)
+		}
+
+		insertSQL := fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES (%s)`, tableName, strings.Join(names, ","), strings.Join(placeholders, ","))
+		if _, err := db.Exec(insertSQL, vals...); err != nil {
+			return errors.Errorf("Could not insert into table %s: item: %+v, sql: %s, error: %v", tableName, item, insertSQL, err)
+		}
+	}
+
+	return nil
+}
