@@ -1,4 +1,4 @@
-package util
+package sqlite3
 
 import (
 	"database/sql"
