@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"unicode"
 
 	"github.com/pkg/errors"
 
@@ -32,14 +33,19 @@ func createDBIfNotExists(dbname string) (*sql.DB, error) {
 }
 
 func toSnakeCase(s string) string {
-	var res []string
-	for i, c := range s {
-		if i > 0 && c >= 'A' && c <= 'Z' {
-			res = append(res, "_")
+	var result strings.Builder
+	runes := []rune(s)
+
+	for i := 0; i < len(runes); i++ {
+		if i > 0 && unicode.IsUpper(runes[i]) {
+			if unicode.IsLower(runes[i-1]) || (i+1 < len(runes) && unicode.IsLower(runes[i+1])) {
+				result.WriteRune('_')
+			}
 		}
-		res = append(res, string(c))
+		result.WriteRune(unicode.ToLower(runes[i]))
 	}
-	return strings.ToLower(strings.Join(res, ""))
+
+	return result.String()
 }
 
 //go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames
