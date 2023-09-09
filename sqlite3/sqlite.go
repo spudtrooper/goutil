@@ -31,11 +31,38 @@ func createDBIfNotExists(dbname string) (*sql.DB, error) {
 	return db, nil
 }
 
-//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists
+func toSnakeCase(s string) string {
+	var res []string
+	for i, c := range s {
+		if i > 0 && c >= 'A' && c <= 'Z' {
+			res = append(res, "_")
+		}
+		res = append(res, string(c))
+	}
+	return strings.ToLower(strings.Join(res, ""))
+}
+
+//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames
 func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
 	opts := MakePopulateSqlite3TableOptions(optss...)
 
 	primaryKey := opts.PrimaryKey()
+
+	fieldName := func(structFieldName string) string {
+		res := structFieldName
+		if opts.LowerCaseColumnNames() {
+			res = strings.ToLower(res)
+		}
+		if opts.SnakeCaseColumnNames() {
+			res = toSnakeCase(res)
+		}
+		if opts.RemoveInvalidCharsFromColumnNames() {
+			res = strings.ReplaceAll(res, " ", "_")
+			res = strings.ReplaceAll(res, "-", "_")
+			res = strings.ReplaceAll(res, ".", "_")
+		}
+		return res
+	}
 
 	if dbname == "" {
 		return fmt.Errorf("no dbname provided")
@@ -93,14 +120,14 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 		columnType := ""
 
 		switch field.Type.Kind() {
-		case reflect.Int, reflect.Int32, reflect.Int64:
+		case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int16, reflect.Int8:
 			columnType = "INTEGER"
 		case reflect.Float32, reflect.Float64:
 			columnType = "REAL"
 		case reflect.String:
 			columnType = "TEXT"
 		default:
-			// TODO: Handle more?
+			// TODO: More?
 			continue
 		}
 
@@ -109,13 +136,14 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 		}
 
 		fieldsToUse[field.Name] = true
-		fields = append(fields, fmt.Sprintf("%s %s", field.Name, columnType))
+		fields = append(fields, fmt.Sprintf("%s %s", fieldName(field.Name), columnType))
 	}
 	createSQL := fmt.Sprintf(`CREATE TABLE "%s" (%s)`, tableName, strings.Join(fields, ", "))
 	if _, err := db.Exec(createSQL); err != nil {
 		return errors.Errorf("Could not create table %s: sql: %s, error: %v", tableName, createSQL, err)
 	}
 
+	// Insert the data
 	for _, item := range data {
 		vals := make([]interface{}, 0, typ.NumField())
 		names := make([]string, 0, typ.NumField())
