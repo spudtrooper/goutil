@@ -14,21 +14,16 @@ import (
 )
 
 func createDBIfNotExists(dbname string) (*sql.DB, error) {
-	// Check if the file exists
 	if _, err := os.Stat(dbname); os.IsNotExist(err) {
-		// The database file doesn't exist, so we'll connect to it.
-		// This will create the database file.
 		db, err := sql.Open("sqlite3", dbname)
 		if err != nil {
 			return nil, err
 		}
 		return db, nil
 	} else if err != nil {
-		// An error occurred when trying to check the file
 		return nil, err
 	}
 
-	// If the database file already exists, we'll just open a connection to it.
 	db, err := sql.Open("sqlite3", dbname)
 	if err != nil {
 		return nil, err
@@ -105,7 +100,7 @@ func CreateAndPopulateTable(dbname, tableName string, data []interface{}, optss 
 		case reflect.String:
 			columnType = "TEXT"
 		default:
-			// only handling a few basic types for illustration
+			// TODO: Handle more?
 			continue
 		}
 
@@ -121,7 +116,6 @@ func CreateAndPopulateTable(dbname, tableName string, data []interface{}, optss 
 		return errors.Errorf("Could not create table %s: sql: %s, error: %v", tableName, createSQL, err)
 	}
 
-	// Insert the data
 	for _, item := range data {
 		vals := make([]interface{}, 0, typ.NumField())
 		names := make([]string, 0, typ.NumField())
