@@ -23,6 +23,8 @@ type PopulateSqlite3TableOptions interface {
 	HasRemoveInvalidCharsFromColumnNames() bool
 	SnakeCaseColumnNames() bool
 	HasSnakeCaseColumnNames() bool
+	Verbose() bool
+	HasVerbose() bool
 }
 
 func PopulateSqlite3TableCreateDBIfNotExists(createDBIfNotExists bool) PopulateSqlite3TableOption {
@@ -121,6 +123,22 @@ func PopulateSqlite3TableSnakeCaseColumnNamesFlag(snakeCaseColumnNames *bool) Po
 	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableSnakeCaseColumnNames(bool %+v)", snakeCaseColumnNames)}
 }
 
+func PopulateSqlite3TableVerbose(verbose bool) PopulateSqlite3TableOption {
+	return PopulateSqlite3TableOption{func(opts *populateSqlite3TableOptionImpl) {
+		opts.has_verbose = true
+		opts.verbose = verbose
+	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableVerbose(bool %+v)", verbose)}
+}
+func PopulateSqlite3TableVerboseFlag(verbose *bool) PopulateSqlite3TableOption {
+	return PopulateSqlite3TableOption{func(opts *populateSqlite3TableOptionImpl) {
+		if verbose == nil {
+			return
+		}
+		opts.has_verbose = true
+		opts.verbose = *verbose
+	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableVerbose(bool %+v)", verbose)}
+}
+
 type populateSqlite3TableOptionImpl struct {
 	createDBIfNotExists                   bool
 	has_createDBIfNotExists               bool
@@ -134,6 +152,8 @@ type populateSqlite3TableOptionImpl struct {
 	has_removeInvalidCharsFromColumnNames bool
 	snakeCaseColumnNames                  bool
 	has_snakeCaseColumnNames              bool
+	verbose                               bool
+	has_verbose                           bool
 }
 
 func (p *populateSqlite3TableOptionImpl) CreateDBIfNotExists() bool { return p.createDBIfNotExists }
@@ -158,6 +178,8 @@ func (p *populateSqlite3TableOptionImpl) SnakeCaseColumnNames() bool { return p.
 func (p *populateSqlite3TableOptionImpl) HasSnakeCaseColumnNames() bool {
 	return p.has_snakeCaseColumnNames
 }
+func (p *populateSqlite3TableOptionImpl) Verbose() bool    { return p.verbose }
+func (p *populateSqlite3TableOptionImpl) HasVerbose() bool { return p.has_verbose }
 
 func makePopulateSqlite3TableOptionImpl(opts ...PopulateSqlite3TableOption) *populateSqlite3TableOptionImpl {
 	res := &populateSqlite3TableOptionImpl{}

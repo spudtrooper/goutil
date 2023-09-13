@@ -48,7 +48,7 @@ func toSnakeCase(s string) string {
 	return result.String()
 }
 
-//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames
+//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose
 func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
 	opts := MakePopulateSqlite3TableOptions(optss...)
 
@@ -105,9 +105,12 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 
 	// Maybe drop the table
 	if opts.DropIfExists() {
-		log.Printf("maybe dropping database %s", dbname)
+		log.Printf("maybe dropping table %s", tableName)
 		sql := fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, tableName)
-		_, err := db.Exec(sql)
+		res, err := db.Exec(sql)
+		if opts.Verbose() {
+			log.Printf("result from dropping table %s: %+v", tableName, res)
+		}
 		if err != nil {
 			return errors.Errorf("Could not drop table %s: sql : %s, error: %v",
 				tableName, sql, err)
@@ -145,8 +148,12 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 		fields = append(fields, fmt.Sprintf("%s %s", fieldName(field.Name), columnType))
 	}
 	createSQL := fmt.Sprintf(`CREATE TABLE "%s" (%s)`, tableName, strings.Join(fields, ", "))
-	if _, err := db.Exec(createSQL); err != nil {
+	res, err := db.Exec(createSQL)
+	if err != nil {
 		return errors.Errorf("Could not create table %s: sql: %s, error: %v", tableName, createSQL, err)
+	}
+	if opts.Verbose() {
+		log.Printf("result from creating table %s: %+v", tableName, res)
 	}
 
 	// Insert the data
@@ -168,7 +175,7 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 			placeholders = append(placeholders, "?")
 			v := val.Field(i).Interface()
 			if val.Field(i).Type().Name() == "string" {
-				v = fmt.Sprintf(`"%s"`, v)
+				v = fmt.Sprintf(`%s`, v)
 			}
 			vals = append(vals, v)
 		}
