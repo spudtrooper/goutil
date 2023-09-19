@@ -50,6 +50,9 @@ func toSnakeCase(s string) string {
 }
 
 func mustFormat(res sql.Result) string {
+	if res == nil {
+		return "nil"
+	}
 	rows, err := res.RowsAffected()
 	check.Err(err)
 	id, err := res.LastInsertId()
