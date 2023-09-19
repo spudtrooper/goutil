@@ -13,6 +13,8 @@ func (o PopulateSqlite3TableOption) String() string { return o.s }
 type PopulateSqlite3TableOptions interface {
 	CreateDBIfNotExists() bool
 	HasCreateDBIfNotExists() bool
+	DeleteWhere() string
+	HasDeleteWhere() bool
 	DropIfExists() bool
 	HasDropIfExists() bool
 	LowerCaseColumnNames() bool
@@ -41,6 +43,22 @@ func PopulateSqlite3TableCreateDBIfNotExistsFlag(createDBIfNotExists *bool) Popu
 		opts.has_createDBIfNotExists = true
 		opts.createDBIfNotExists = *createDBIfNotExists
 	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableCreateDBIfNotExists(bool %+v)", createDBIfNotExists)}
+}
+
+func PopulateSqlite3TableDeleteWhere(deleteWhere string) PopulateSqlite3TableOption {
+	return PopulateSqlite3TableOption{func(opts *populateSqlite3TableOptionImpl) {
+		opts.has_deleteWhere = true
+		opts.deleteWhere = deleteWhere
+	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableDeleteWhere(string %+v)", deleteWhere)}
+}
+func PopulateSqlite3TableDeleteWhereFlag(deleteWhere *string) PopulateSqlite3TableOption {
+	return PopulateSqlite3TableOption{func(opts *populateSqlite3TableOptionImpl) {
+		if deleteWhere == nil {
+			return
+		}
+		opts.has_deleteWhere = true
+		opts.deleteWhere = *deleteWhere
+	}, fmt.Sprintf("sqlite3.PopulateSqlite3TableDeleteWhere(string %+v)", deleteWhere)}
 }
 
 func PopulateSqlite3TableDropIfExists(dropIfExists bool) PopulateSqlite3TableOption {
@@ -142,6 +160,8 @@ func PopulateSqlite3TableVerboseFlag(verbose *bool) PopulateSqlite3TableOption {
 type populateSqlite3TableOptionImpl struct {
 	createDBIfNotExists                   bool
 	has_createDBIfNotExists               bool
+	deleteWhere                           string
+	has_deleteWhere                       bool
 	dropIfExists                          bool
 	has_dropIfExists                      bool
 	lowerCaseColumnNames                  bool
@@ -160,6 +180,8 @@ func (p *populateSqlite3TableOptionImpl) CreateDBIfNotExists() bool { return p.c
 func (p *populateSqlite3TableOptionImpl) HasCreateDBIfNotExists() bool {
 	return p.has_createDBIfNotExists
 }
+func (p *populateSqlite3TableOptionImpl) DeleteWhere() string        { return p.deleteWhere }
+func (p *populateSqlite3TableOptionImpl) HasDeleteWhere() bool       { return p.has_deleteWhere }
 func (p *populateSqlite3TableOptionImpl) DropIfExists() bool         { return p.dropIfExists }
 func (p *populateSqlite3TableOptionImpl) HasDropIfExists() bool      { return p.has_dropIfExists }
 func (p *populateSqlite3TableOptionImpl) LowerCaseColumnNames() bool { return p.lowerCaseColumnNames }

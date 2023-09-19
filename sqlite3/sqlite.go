@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/pkg/errors"
+	"github.com/spudtrooper/goutil/check"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -48,28 +49,16 @@ func toSnakeCase(s string) string {
 	return result.String()
 }
 
-//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose
+func mustFormat(res sql.Result) string {
+	rows, err := res.RowsAffected()
+	check.Err(err)
+	id, err := res.LastInsertId()
+	check.Err(err)
+	return fmt.Sprintf("Result{RowsAffected: %d, LastInsertId: %d}", rows, id)
+}
+
+//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
 func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
-	opts := MakePopulateSqlite3TableOptions(optss...)
-
-	primaryKey := opts.PrimaryKey()
-
-	fieldName := func(structFieldName string) string {
-		res := structFieldName
-		if opts.SnakeCaseColumnNames() {
-			res = toSnakeCase(res)
-		}
-		if opts.RemoveInvalidCharsFromColumnNames() {
-			res = strings.ReplaceAll(res, " ", "_")
-			res = strings.ReplaceAll(res, "-", "_")
-			res = strings.ReplaceAll(res, ".", "_")
-		}
-		if opts.LowerCaseColumnNames() {
-			res = strings.ToLower(res)
-		}
-		return res
-	}
-
 	if dbname == "" {
 		return fmt.Errorf("no dbname provided")
 	}
@@ -80,6 +69,10 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 	if len(data) == 0 {
 		return fmt.Errorf("no data provided")
 	}
+
+	opts := MakePopulateSqlite3TableOptions(optss...)
+
+	primaryKey := opts.PrimaryKey()
 
 	var db *sql.DB
 	if opts.CreateDBIfNotExists() {
@@ -105,16 +98,31 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 
 	// Maybe drop the table
 	if opts.DropIfExists() {
-		log.Printf("maybe dropping table %s", tableName)
+		log.Printf("dropping if exists table %s", tableName)
 		sql := fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, tableName)
 		res, err := db.Exec(sql)
 		if opts.Verbose() {
-			log.Printf("result from dropping table %s: %+v", tableName, res)
+			log.Printf("result from dropping table %s: %s", tableName, mustFormat(res))
 		}
 		if err != nil {
-			return errors.Errorf("Could not drop table %s: sql : %s, error: %v",
-				tableName, sql, err)
+			return errors.Errorf("Could not drop table %s: sql : %s, error: %v", tableName, sql, err)
 		}
+	}
+
+	fieldName := func(structFieldName string) string {
+		res := structFieldName
+		if opts.SnakeCaseColumnNames() {
+			res = toSnakeCase(res)
+		}
+		if opts.RemoveInvalidCharsFromColumnNames() {
+			res = strings.ReplaceAll(res, " ", "_")
+			res = strings.ReplaceAll(res, "-", "_")
+			res = strings.ReplaceAll(res, ".", "_")
+		}
+		if opts.LowerCaseColumnNames() {
+			res = strings.ToLower(res)
+		}
+		return res
 	}
 
 	// Reflect over the first item to create a table schema
@@ -147,13 +155,27 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 		fieldsToUse[field.Name] = true
 		fields = append(fields, fmt.Sprintf("%s %s", fieldName(field.Name), columnType))
 	}
-	createSQL := fmt.Sprintf(`CREATE TABLE "%s" (%s)`, tableName, strings.Join(fields, ", "))
+	createSQL := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (%s)`, tableName, strings.Join(fields, ", "))
 	res, err := db.Exec(createSQL)
 	if err != nil {
 		return errors.Errorf("Could not create table %s: sql: %s, error: %v", tableName, createSQL, err)
 	}
 	if opts.Verbose() {
-		log.Printf("result from creating table %s: %+v", tableName, res)
+		log.Printf("result from creating table %s: %s", tableName, mustFormat(res))
+	}
+
+	// Maybe delete certain rows
+	if opts.DeleteWhere() != "" {
+		where := opts.DeleteWhere()
+		log.Printf("deleting rows from %s where %s", tableName, where)
+		sql := fmt.Sprintf("DELETE FROM %s WHERE %s", tableName, where)
+		res, err := db.Exec(sql)
+		if opts.Verbose() {
+			log.Printf("result from deleting rows from table %s where %s: %s", tableName, where, mustFormat(res))
+		}
+		if err != nil {
+			return errors.Errorf("Could not drop table %s where %s: sql : %s, error: %v", tableName, where, sql, err)
+		}
 	}
 
 	// Insert the data
