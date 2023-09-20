@@ -211,5 +211,9 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 		}
 	}
 
+	if opts.Verbose() {
+		log.Printf("inserted %d rows into table %s", len(data), tableName)
+	}
+
 	return nil
 }
