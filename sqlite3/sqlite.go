@@ -60,44 +60,68 @@ func mustFormat(res sql.Result) string {
 	return fmt.Sprintf("Result{RowsAffected: %d, LastInsertId: %d}", rows, id)
 }
 
-//go:generate genopts --function PopulateSqlite3Table dropIfExists primaryKey:string createDBIfNotExists lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
-func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
+//go:generate genopts --function OpenDB createDBIfNotExists
+func OpenDB(dbname string, optss ...OpenDBOption) (*sql.DB, error) {
 	if dbname == "" {
-		return fmt.Errorf("no dbname provided")
-	}
-	if tableName == "" {
-		return fmt.Errorf("no tableName provided")
+		return nil, errors.Errorf("no dbname provided")
 	}
 
-	if len(data) == 0 {
-		return fmt.Errorf("no data provided")
-	}
-
-	opts := MakePopulateSqlite3TableOptions(optss...)
-
-	primaryKey := opts.PrimaryKey()
-
+	opts := MakeOpenDBOptions(optss...)
 	var db *sql.DB
 	if opts.CreateDBIfNotExists() {
 		log.Printf("maybe creating database %s", dbname)
 		d, err := createDBIfNotExists(dbname)
 		if err != nil {
-			return errors.Errorf("Could not create database %s: %v", dbname, err)
+			return nil, errors.Errorf("Could not create database %s: %v", dbname, err)
 		}
 		db = d
 	} else {
 		d, err := sql.Open("sqlite3", dbname)
 		if err != nil {
-			return errors.Errorf("Could not open database %s: %v", dbname, err)
+			return nil, errors.Errorf("Could not open database %s: %v", dbname, err)
 		}
 		db = d
+	}
+	return db, nil
+}
+
+//go:generate genopts --function PopulateSqlite3Table --extends PopulateSqlite3TableFromDB,OpenDB
+func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
+	opts := MakePopulateSqlite3TableOptions(optss...)
+
+	db, err := OpenDB(dbname, opts.ToOpenDBOptions()...)
+	if err != nil {
+		return errors.Errorf("Could not open database %s: %v", dbname, err)
+	}
+	if db == nil {
+		return fmt.Errorf("no db")
+	}
+	defer db.Close()
+
+	if err := PopulateSqlite3TableFromDB(db, tableName, data, opts.ToPopulateSqlite3TableFromDBOptions()...); err != nil {
+		return errors.Errorf("Could not populate sqlite3 table from db: %v", err)
+	}
+
+	return nil
+}
+
+//go:generate genopts --function PopulateSqlite3TableFromDB --extends OpenDB dropIfExists primaryKey:string lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
+func PopulateSqlite3TableFromDB(db *sql.DB, tableName string, data []interface{}, optss ...PopulateSqlite3TableFromDBOption) error {
+	if tableName == "" {
+		return fmt.Errorf("no tableName provided")
 	}
 
 	if db == nil {
 		return fmt.Errorf("no db")
 	}
 
-	defer db.Close()
+	if len(data) == 0 {
+		return fmt.Errorf("no data provided")
+	}
+
+	opts := MakePopulateSqlite3TableFromDBOptions(optss...)
+
+	primaryKey := opts.PrimaryKey()
 
 	// Maybe drop the table
 	if opts.DropIfExists() {

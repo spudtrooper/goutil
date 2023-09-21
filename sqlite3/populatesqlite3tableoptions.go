@@ -27,6 +27,8 @@ type PopulateSqlite3TableOptions interface {
 	HasSnakeCaseColumnNames() bool
 	Verbose() bool
 	HasVerbose() bool
+	ToOpenDBOptions() []OpenDBOption
+	ToPopulateSqlite3TableFromDBOptions() []PopulateSqlite3TableFromDBOption
 }
 
 func PopulateSqlite3TableCreateDBIfNotExists(createDBIfNotExists bool) PopulateSqlite3TableOption {
@@ -202,6 +204,27 @@ func (p *populateSqlite3TableOptionImpl) HasSnakeCaseColumnNames() bool {
 }
 func (p *populateSqlite3TableOptionImpl) Verbose() bool    { return p.verbose }
 func (p *populateSqlite3TableOptionImpl) HasVerbose() bool { return p.has_verbose }
+
+// ToOpenDBOptions converts PopulateSqlite3TableOption to an array of OpenDBOption
+func (o *populateSqlite3TableOptionImpl) ToOpenDBOptions() []OpenDBOption {
+	return []OpenDBOption{
+		OpenDBCreateDBIfNotExists(o.CreateDBIfNotExists()),
+	}
+}
+
+// ToPopulateSqlite3TableFromDBOptions converts PopulateSqlite3TableOption to an array of PopulateSqlite3TableFromDBOption
+func (o *populateSqlite3TableOptionImpl) ToPopulateSqlite3TableFromDBOptions() []PopulateSqlite3TableFromDBOption {
+	return []PopulateSqlite3TableFromDBOption{
+		PopulateSqlite3TableFromDBCreateDBIfNotExists(o.CreateDBIfNotExists()),
+		PopulateSqlite3TableFromDBDeleteWhere(o.DeleteWhere()),
+		PopulateSqlite3TableFromDBDropIfExists(o.DropIfExists()),
+		PopulateSqlite3TableFromDBLowerCaseColumnNames(o.LowerCaseColumnNames()),
+		PopulateSqlite3TableFromDBPrimaryKey(o.PrimaryKey()),
+		PopulateSqlite3TableFromDBRemoveInvalidCharsFromColumnNames(o.RemoveInvalidCharsFromColumnNames()),
+		PopulateSqlite3TableFromDBSnakeCaseColumnNames(o.SnakeCaseColumnNames()),
+		PopulateSqlite3TableFromDBVerbose(o.Verbose()),
+	}
+}
 
 func makePopulateSqlite3TableOptionImpl(opts ...PopulateSqlite3TableOption) *populateSqlite3TableOptionImpl {
 	res := &populateSqlite3TableOptionImpl{}
