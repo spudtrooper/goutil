@@ -27,6 +27,7 @@ type PopulateSqlite3TableFromDBOptions interface {
 	HasSnakeCaseColumnNames() bool
 	Verbose() bool
 	HasVerbose() bool
+	ToDropTableIfExistsOptions() []DropTableIfExistsOption
 	ToOpenDBOptions() []OpenDBOption
 }
 
@@ -209,6 +210,13 @@ func (p *populateSqlite3TableFromDBOptionImpl) HasSnakeCaseColumnNames() bool {
 }
 func (p *populateSqlite3TableFromDBOptionImpl) Verbose() bool    { return p.verbose }
 func (p *populateSqlite3TableFromDBOptionImpl) HasVerbose() bool { return p.has_verbose }
+
+// ToDropTableIfExistsOptions converts PopulateSqlite3TableFromDBOption to an array of DropTableIfExistsOption
+func (o *populateSqlite3TableFromDBOptionImpl) ToDropTableIfExistsOptions() []DropTableIfExistsOption {
+	return []DropTableIfExistsOption{
+		DropTableIfExistsVerbose(o.Verbose()),
+	}
+}
 
 // ToOpenDBOptions converts PopulateSqlite3TableFromDBOption to an array of OpenDBOption
 func (o *populateSqlite3TableFromDBOptionImpl) ToOpenDBOptions() []OpenDBOption {

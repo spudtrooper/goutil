@@ -105,7 +105,22 @@ func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ..
 	return nil
 }
 
-//go:generate genopts --function PopulateSqlite3TableFromDB --extends OpenDB dropIfExists primaryKey:string lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
+//go:generate genopts --function DropTableIfExists verbose
+func DropTableIfExists(db *sql.DB, tableName string, optss ...DropTableIfExistsOption) error {
+	opts := MakeDropTableIfExistsOptions(optss...)
+
+	sql := fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, tableName)
+	res, err := db.Exec(sql)
+	if opts.Verbose() {
+		log.Printf("result from dropping table %s: %s", tableName, mustFormat(res))
+	}
+	if err != nil {
+		return errors.Errorf("Could not drop table %s: sql : %s, error: %v", tableName, sql, err)
+	}
+
+}
+
+//go:generate genopts --function PopulateSqlite3TableFromDB --extends OpenDB,DropTableIfExists dropIfExists primaryKey:string lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
 func PopulateSqlite3TableFromDB(db *sql.DB, tableName string, data []interface{}, optss ...PopulateSqlite3TableFromDBOption) error {
 	if tableName == "" {
 		return fmt.Errorf("no tableName provided")
@@ -126,13 +141,8 @@ func PopulateSqlite3TableFromDB(db *sql.DB, tableName string, data []interface{}
 	// Maybe drop the table
 	if opts.DropIfExists() {
 		log.Printf("dropping if exists table %s", tableName)
-		sql := fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, tableName)
-		res, err := db.Exec(sql)
-		if opts.Verbose() {
-			log.Printf("result from dropping table %s: %s", tableName, mustFormat(res))
-		}
-		if err != nil {
-			return errors.Errorf("Could not drop table %s: sql : %s, error: %v", tableName, sql, err)
+		if err := DropTableIfExists(db, tableName, opts.ToDropTableIfExistsOptions()...); err != nil {
+			return err
 		}
 	}
 
