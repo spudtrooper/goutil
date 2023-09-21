@@ -118,6 +118,7 @@ func DropTableIfExists(db *sql.DB, tableName string, optss ...DropTableIfExistsO
 		return errors.Errorf("Could not drop table %s: sql : %s, error: %v", tableName, sql, err)
 	}
 
+	return nil
 }
 
 //go:generate genopts --function PopulateSqlite3TableFromDB --extends OpenDB,DropTableIfExists dropIfExists primaryKey:string lowerCaseColumnNames snakeCaseColumnNames removeInvalidCharsFromColumnNames verbose deleteWhere:string
