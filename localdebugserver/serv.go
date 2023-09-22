@@ -14,6 +14,10 @@ type Delegate interface {
 	Content() (string, error)
 }
 
+func NewServer(del Delegate) *serv {
+	return &serv{del}
+}
+
 type serv struct {
 	del Delegate
 }
@@ -74,10 +78,6 @@ func (s *serv) renderHTML(w http.ResponseWriter, mu *sync.RWMutex) error {
 	}
 	t.Execute(w, data)
 	return nil
-}
-
-func NewServer(del Delegate) *serv {
-	return &serv{del}
 }
 
 func (s *serv) startHTTPServer(port int, mu *sync.RWMutex) {
