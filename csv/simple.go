@@ -11,15 +11,16 @@ type simple struct {
 }
 
 func NewSimpleWriter() *simple {
-	var buf strings.Builder
-	w := realCSV.NewWriter(&buf)
-	return &simple{buf, w}
+	res := &simple{}
+	w := realCSV.NewWriter(&res.buf)
+	res.w = w
+	return res
 }
 
-func (w *simple) Write(record []string) error    { return w.Write(record) }
-func (w *simple) WriteAll(record []string) error { return w.WriteAll(record) }
-func (w *simple) Flush()                         { w.Flush() }
-func (w *simple) Error() error                   { return w.Error() }
+func (w *simple) Write(record []string) error       { return w.w.Write(record) }
+func (w *simple) WriteAll(records [][]string) error { return w.w.WriteAll(records) }
+func (w *simple) Flush()                            { w.w.Flush() }
+func (w *simple) Error() error                      { return w.w.Error() }
 
 func (w *simple) Done() string {
 	w.w.Flush()
