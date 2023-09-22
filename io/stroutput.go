@@ -12,7 +12,7 @@ type stringOutput struct {
 func NewStringOutput() *stringOutput { return &stringOutput{} }
 
 func (s *stringOutput) Println() {
-	s.buf = append(s.buf, "")
+	s.buf = append(s.buf, "\n")
 }
 
 func (s *stringOutput) Printf(format string, args ...any) {
@@ -20,7 +20,7 @@ func (s *stringOutput) Printf(format string, args ...any) {
 }
 
 func (s *stringOutput) String() string {
-	return strings.Join(s.buf, "\n")
+	return strings.Join(s.buf, "")
 }
 
 func (s *stringOutput) Clear() {
