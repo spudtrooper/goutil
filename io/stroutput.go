@@ -11,8 +11,12 @@ type stringOutput struct {
 
 func NewStringOutput() *stringOutput { return &stringOutput{} }
 
-func (s *stringOutput) Println() {
-	s.buf = append(s.buf, "\n")
+func (s *stringOutput) Println(args ...any) {
+	var c string
+	for _, a := range args {
+		c += fmt.Sprintf("%v", a)
+	}
+	s.buf = append(s.buf, c+"\n")
 }
 
 func (s *stringOutput) Printf(format string, args ...any) {
