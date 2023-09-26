@@ -9,15 +9,6 @@ import (
 	"time"
 )
 
-type Delegate interface {
-	Title() (string, error)
-	Content() (string, error)
-}
-
-func NewServer(del Delegate) *serv {
-	return &serv{del}
-}
-
 type serv struct {
 	del Delegate
 }
@@ -52,13 +43,24 @@ func (s *serv) renderHTML(w http.ResponseWriter, mu *sync.RWMutex) error {
 <body>
 	<h1>Nmap Result</h1>
 	<h2>{{.Now}}</h2>
-	<pre style="overflow:auto">
-		{{.Content}}
-	</pre>
+	{{- if .HTMLContent}}
+		<div>
+			{{.HTMLContent}}
+		</div>
+	{{- end}}
+	{{- if .TextContent}}
+		<pre style="overflow:auto">
+			{{.TextContent}}
+		</pre>
+	{{- end}}
 </body>
 </html>
 `
-	content, err := s.del.Content()
+	textContent, err := s.del.TextContent()
+	if err != nil {
+		return err
+	}
+	htmlContent, err := s.del.HTMLContent()
 	if err != nil {
 		return err
 	}
@@ -68,13 +70,15 @@ func (s *serv) renderHTML(w http.ResponseWriter, mu *sync.RWMutex) error {
 	}
 	t := template.Must(template.New("serv").Parse(tmpl))
 	data := struct {
-		Title   string
-		Now     string
-		Content string
+		Title       string
+		Now         string
+		TextContent string
+		HTMLContent template.HTML
 	}{
-		Title:   title,
-		Now:     time.Now().Format("2006 15:04:05 MST"),
-		Content: content,
+		Title:       title,
+		Now:         time.Now().Format("2006 15:04:05 MST"),
+		TextContent: textContent,
+		HTMLContent: template.HTML(htmlContent),
 	}
 	t.Execute(w, data)
 	return nil
