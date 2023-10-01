@@ -4,29 +4,27 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"reflect"
 	"strings"
 	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/check"
+	"github.com/spudtrooper/goutil/io"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func createDBIfNotExists(dbname string) (*sql.DB, error) {
-	if _, err := os.Stat(dbname); os.IsNotExist(err) {
-		db, err := sql.Open("sqlite3", dbname)
+func createDBIfNotExists(dbPath string) (*sql.DB, error) {
+	if io.FileExists(dbPath) {
+		db, err := sql.Open("sqlite3", dbPath)
 		if err != nil {
 			return nil, err
 		}
 		return db, nil
-	} else if err != nil {
-		return nil, err
 	}
 
-	db, err := sql.Open("sqlite3", dbname)
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -61,24 +59,24 @@ func mustFormat(res sql.Result) string {
 }
 
 //go:generate genopts --function OpenDB createDBIfNotExists
-func OpenDB(dbname string, optss ...OpenDBOption) (*sql.DB, error) {
-	if dbname == "" {
+func OpenDB(dbPath string, optss ...OpenDBOption) (*sql.DB, error) {
+	if dbPath == "" {
 		return nil, errors.Errorf("no dbname provided")
 	}
 
 	opts := MakeOpenDBOptions(optss...)
 	var db *sql.DB
 	if opts.CreateDBIfNotExists() {
-		log.Printf("maybe creating database %s", dbname)
-		d, err := createDBIfNotExists(dbname)
+		log.Printf("maybe creating database %s", dbPath)
+		d, err := createDBIfNotExists(dbPath)
 		if err != nil {
-			return nil, errors.Errorf("Could not create database %s: %v", dbname, err)
+			return nil, errors.Errorf("Could not create database %s: %v", dbPath, err)
 		}
 		db = d
 	} else {
-		d, err := sql.Open("sqlite3", dbname)
+		d, err := sql.Open("sqlite3", dbPath)
 		if err != nil {
-			return nil, errors.Errorf("Could not open database %s: %v", dbname, err)
+			return nil, errors.Errorf("Could not open database %s: %v", dbPath, err)
 		}
 		db = d
 	}
@@ -86,12 +84,12 @@ func OpenDB(dbname string, optss ...OpenDBOption) (*sql.DB, error) {
 }
 
 //go:generate genopts --function PopulateSqlite3Table --extends PopulateSqlite3TableFromDB,OpenDB
-func PopulateSqlite3Table(dbname, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
+func PopulateSqlite3Table(dbPath, tableName string, data []interface{}, optss ...PopulateSqlite3TableOption) error {
 	opts := MakePopulateSqlite3TableOptions(optss...)
 
-	db, err := OpenDB(dbname, opts.ToOpenDBOptions()...)
+	db, err := OpenDB(dbPath, opts.ToOpenDBOptions()...)
 	if err != nil {
-		return errors.Errorf("Could not open database %s: %v", dbname, err)
+		return errors.Errorf("Could not open database %s: %v", dbPath, err)
 	}
 	if db == nil {
 		return fmt.Errorf("no db")

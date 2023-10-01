@@ -15,6 +15,16 @@ func FileExists(f string) bool {
 	return true
 }
 
+func DirExists(f string) bool {
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		return false
+	}
+	if !IsDir(f) {
+		return false
+	}
+	return true
+}
+
 func MkdirAll(paths ...string) (string, error) {
 	outDir := path.Join(paths...)
 	if err := os.MkdirAll(outDir, 0755); err != nil {
