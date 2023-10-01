@@ -23,6 +23,13 @@ func (s *stringOutput) Printf(format string, args ...any) {
 	s.buf = append(s.buf, fmt.Sprintf(format, args...))
 }
 
+func (s *stringOutput) Printfln(format string, args ...any) {
+	if !strings.HasSuffix(format, "\n") {
+		format += "\n"
+	}
+	s.buf = append(s.buf, fmt.Sprintf(format, args...))
+}
+
 func (s *stringOutput) String() string {
 	return strings.Join(s.buf, "")
 }

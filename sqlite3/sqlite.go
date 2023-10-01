@@ -10,26 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spudtrooper/goutil/check"
-	"github.com/spudtrooper/goutil/io"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-func createDBIfNotExists(dbPath string) (*sql.DB, error) {
-	if io.FileExists(dbPath) {
-		db, err := sql.Open("sqlite3", dbPath)
-		if err != nil {
-			return nil, err
-		}
-		return db, nil
-	}
-
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
-}
 
 func toSnakeCase(s string) string {
 	var result strings.Builder
@@ -65,22 +48,11 @@ func OpenDB(dbPath string, optss ...OpenDBOption) (*sql.DB, error) {
 	}
 
 	opts := MakeOpenDBOptions(optss...)
-	var db *sql.DB
 	if opts.CreateDBIfNotExists() {
-		log.Printf("maybe creating database %s", dbPath)
-		d, err := createDBIfNotExists(dbPath)
-		if err != nil {
-			return nil, errors.Errorf("Could not create database %s: %v", dbPath, err)
-		}
-		db = d
-	} else {
-		d, err := sql.Open("sqlite3", dbPath)
-		if err != nil {
-			return nil, errors.Errorf("Could not open database %s: %v", dbPath, err)
-		}
-		db = d
+		log.Printf("NOTE: We're not actually creating %s, I don't know why I had this as an option", dbPath)
 	}
-	return db, nil
+
+	return sql.Open("sqlite3", dbPath)
 }
 
 //go:generate genopts --function PopulateSqlite3Table --extends PopulateSqlite3TableFromDB,OpenDB
