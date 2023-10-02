@@ -78,3 +78,12 @@ func (t *timer) Time(event string, fn func()) {
 		)
 	}
 }
+
+func Call[T any](label string, fn func() (T, error)) (T, error) {
+	log.Printf("[START] %s", label)
+	start := time.Now()
+	res, err := fn()
+	stop := time.Now()
+	log.Printf("[STOP] %s in %v", label, stop.Sub(start))
+	return res, err
+}
