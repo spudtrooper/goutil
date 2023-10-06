@@ -357,3 +357,94 @@ func TestSortedKeys(t *testing.T) {
 		})
 	}
 }
+
+func TestIntSetAdd(t *testing.T) {
+	set := Int([]int{1, 2})
+	set.Add(3, 4, 5)
+
+	if len(set) != 5 || !set[1] || !set[2] || !set[3] || !set[4] || !set[5] {
+		t.Errorf("Add failed for IntSet, expected [1:2:3:4:5], got %v", set)
+	}
+}
+
+func TestInt32SetAdd(t *testing.T) {
+	set := Int32([]int32{1, 2})
+	set.Add(3, 4, 5)
+
+	if len(set) != 5 || !set[1] || !set[2] || !set[3] || !set[4] || !set[5] {
+		t.Errorf("Add failed for Int32Set, expected [1:2:3:4:5], got %v", set)
+	}
+}
+
+func TestInt64SetAdd(t *testing.T) {
+	set := Int64([]int64{1, 2})
+	set.Add(3, 4, 5)
+
+	if len(set) != 5 || !set[1] || !set[2] || !set[3] || !set[4] || !set[5] {
+		t.Errorf("Add failed for Int64Set, expected [1:2:3:4:5], got %v", set)
+	}
+}
+
+func TestStringSetAdd(t *testing.T) {
+	set := String([]string{"one", "two"})
+	set.Add("three", "four")
+
+	if len(set) != 4 || !set["one"] || !set["two"] || !set["three"] || !set["four"] {
+		t.Errorf("Add failed for StringSet, expected [one:two:three:four], got %v", set)
+	}
+}
+
+func TestFloat32SetAdd(t *testing.T) {
+	set := Float32([]float32{1.1, 2.2})
+	set.Add(3.3, 4.4)
+
+	if len(set) != 4 || !set[1.1] || !set[2.2] || !set[3.3] || !set[4.4] {
+		t.Errorf("Add failed for Float32Set, expected [1.1:2.2:3.3:4.4], got %v", set)
+	}
+}
+
+func TestFloat64SetAdd(t *testing.T) {
+	set := Float64([]float64{1.1, 2.2})
+	set.Add(3.3, 4.4)
+
+	if len(set) != 4 || !set[1.1] || !set[2.2] || !set[3.3] || !set[4.4] {
+		t.Errorf("Add failed for Float64Set, expected [1.1:2.2:3.3:4.4], got %v", set)
+	}
+}
+
+func TestIntSetSorted(t *testing.T) {
+	set := Int([]int{3, 1, 2})
+	set.Add(4, 5)
+
+	slice := set.Slice()
+	sorted := set.Sorted()
+	sort.Ints(slice) // Ensure the original slice is sorted
+	if !reflect.DeepEqual(sorted, slice) {
+		t.Errorf("Sorted failed for IntSet, expected %v, got %v", slice, sorted)
+	}
+}
+
+func TestStringSetSorted(t *testing.T) {
+	set := String([]string{"three", "one", "two"})
+	set.Add("four", "five")
+
+	slice := set.Slice()
+
+	sorted := set.Sorted()
+	sort.Strings(slice) // Ensure the original slice is sorted
+	if !reflect.DeepEqual(sorted, slice) {
+		t.Errorf("Sorted failed for StringSet, expected %v, got %v", slice, sorted)
+	}
+}
+
+func TestFloat64SetSorted(t *testing.T) {
+	set := Float64([]float64{3.3, 1.1, 2.2})
+	set.Add(4.4, 5.5)
+
+	slice := set.Slice()
+	sorted := set.Sorted()
+	sort.Float64s(slice) // Ensure the original slice is sorted
+	if !reflect.DeepEqual(sorted, slice) {
+		t.Errorf("Sorted failed for Float64Set, expected %v, got %v", slice, sorted)
+	}
+}

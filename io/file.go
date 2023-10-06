@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/spudtrooper/goutil/check"
 )
 
 func FileExists(f string) bool {
@@ -31,6 +33,12 @@ func MkdirAll(paths ...string) (string, error) {
 		return "", err
 	}
 	return outDir, nil
+}
+
+func MustMkdirAll(paths ...string) string {
+	res, err := MkdirAll(paths...)
+	check.Err(err)
+	return res
 }
 
 func Copy(src string, dst string) error {
