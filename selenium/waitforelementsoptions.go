@@ -15,6 +15,7 @@ type WaitForElementsOptions interface {
 	HasLimit() bool
 	Message() string
 	HasMessage() bool
+	ToWaitOptions() []WaitOption
 }
 
 func WaitForElementsLimit(limit int) WaitForElementsOption {
@@ -60,6 +61,14 @@ func (w *waitForElementsOptionImpl) Limit() int       { return w.limit }
 func (w *waitForElementsOptionImpl) HasLimit() bool   { return w.has_limit }
 func (w *waitForElementsOptionImpl) Message() string  { return w.message }
 func (w *waitForElementsOptionImpl) HasMessage() bool { return w.has_message }
+
+// ToWaitOptions converts WaitForElementsOption to an array of WaitOption
+func (o *waitForElementsOptionImpl) ToWaitOptions() []WaitOption {
+	return []WaitOption{
+		WaitLimit(o.Limit()),
+		WaitMessage(o.Message()),
+	}
+}
 
 func makeWaitForElementsOptionImpl(opts ...WaitForElementsOption) *waitForElementsOptionImpl {
 	res := &waitForElementsOptionImpl{}

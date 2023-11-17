@@ -181,11 +181,24 @@ func FindButton(wd selenium.WebDriver, text string) (selenium.WebElement, error)
 	return FindElement(wd, "button", text)
 }
 
-func WaitForButton(wd selenium.WebDriver, btnText string) (selenium.WebElement, error) {
+//go:generate genopts --function WaitForButton --extends Wait
+func WaitForButton(wd selenium.WebDriver, btnText string, optss ...WaitForButtonOption) (selenium.WebElement, error) {
+	opts := MakeWaitForButtonOptions(optss...)
+	msg, limit := opts.Message(), opts.Limit()
+
+	prefix := ""
+	if msg != "" {
+		prefix = fmt.Sprintf("[%s] ", msg)
+	}
+
 	var res selenium.WebElement
 	var cnt int
 	wd.Wait(func(wd selenium.WebDriver) (bool, error) {
-		log.Printf("waiting for button %s [%d] ...", btnText, cnt+1)
+		if limit > 0 && cnt == limit {
+			log.Printf("%shit limit=%d after %d tries, quitting ...", prefix, limit, cnt+1)
+			return true, nil
+		}
+		log.Printf("[%d] %swaiting for button %s ...", cnt+1, prefix, btnText)
 		cnt++
 		btn, err := FindButton(wd, btnText)
 		if err != nil {
@@ -214,19 +227,21 @@ func Wait(wd selenium.WebDriver, fn func(wd selenium.WebDriver) (bool, error), o
 	}
 	var cnt int
 	err := wd.Wait(func(wd selenium.WebDriver) (bool, error) {
-		if limit > 0 && cnt > limit {
+		if limit > 0 && cnt == limit {
 			log.Printf("%shit limit=%d after %d tries, quitting ...", prefix, limit, cnt+1)
 			return true, nil
 		}
 
-		log.Printf("%swaiting [%d] ...", prefix, cnt+1)
+		log.Printf("[%d/%d] %swaiting ...", cnt+1, limit, prefix)
 		cnt++
 		return fn(wd)
 	})
 	return err
 }
 
-//go:generate genopts --function WaitForElement message:string limit:int
+// TODO: Refactor Wait* to use Wait above
+
+//go:generate genopts --function WaitForElement --extends Wait
 func WaitForElement(wd selenium.WebDriver, tagName, text string, optss ...WaitForElementOption) (selenium.WebElement, error) {
 	opts := MakeWaitForElementOptions(optss...)
 	msg, limit := opts.Message(), opts.Limit()
@@ -239,12 +254,12 @@ func WaitForElement(wd selenium.WebDriver, tagName, text string, optss ...WaitFo
 	var res selenium.WebElement
 	var cnt int
 	wd.Wait(func(wd selenium.WebDriver) (bool, error) {
-		if limit > 0 && cnt > limit {
+		if limit > 0 && cnt == limit {
 			log.Printf("%shit limit=%d after %d tries, quitting ...", prefix, limit, cnt+1)
 			return true, nil
 		}
 
-		log.Printf("waiting for div %s %q [%d] ...", text, tagName, cnt+1)
+		log.Printf("[%d] %swaiting for div %s %q...", cnt+1, prefix, text, tagName)
 		cnt++
 		btn, err := FindElement(wd, tagName, text)
 		if err != nil {
@@ -262,7 +277,7 @@ func WaitForElement(wd selenium.WebDriver, tagName, text string, optss ...WaitFo
 	return res, nil
 }
 
-//go:generate genopts --function WaitForElements message:string limit:int
+//go:generate genopts --function WaitForElements --extends Wait
 func WaitForElements(wd selenium.WebDriver, tagName, text string, optss ...WaitForElementsOption) ([]selenium.WebElement, error) {
 	opts := MakeWaitForElementsOptions(optss...)
 	msg, limit := opts.Message(), opts.Limit()
@@ -275,12 +290,12 @@ func WaitForElements(wd selenium.WebDriver, tagName, text string, optss ...WaitF
 	var res []selenium.WebElement
 	var cnt int
 	wd.Wait(func(wd selenium.WebDriver) (bool, error) {
-		if limit > 0 && cnt > limit {
+		if limit > 0 && cnt == limit {
 			log.Printf("%shit limit=%d after %d tries, quitting ...", prefix, limit, cnt+1)
 			return true, nil
 		}
 
-		log.Printf("waiting for div %s %q [%d] ...", text, tagName, cnt+1)
+		log.Printf("[%d] %swaiting for div %s %q [%d] ...", cnt+1, prefix, text, tagName)
 		cnt++
 		els, err := FindElements(wd, tagName, text)
 		if err != nil {
@@ -320,4 +335,9 @@ func TakeScreenshot(wd selenium.WebDriver, outFile string) error {
 	png.Encode(f, im)
 
 	return nil
+}
+
+// https://stackoverflow.com/questions/24267413/how-to-get-parent-of-webelement
+func Parent(el selenium.WebElement) (selenium.WebElement, error) {
+	return el.FindElement(selenium.ByXPATH, "./..")
 }
